@@ -246,5 +246,43 @@
     </div>
     <script src="script.js"></script> 
     <script src="mrf_items_log.js"></script>
+
+    <!-- MRF Details Modal Structure -->
+    <div id="mrfDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-75 hidden flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-slate-200 mb-4">MRF Item Details</h2>
+            
+            <!-- Close button -->
+            <button id="closeModalBtn" class="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- Loading Indicator -->
+            <p id="modalLoading" class="text-center text-gray-500 dark:text-slate-400">Loading details...</p>
+
+            <!-- Error Display -->
+            <p id="modalError" class="text-center text-red-600 dark:text-red-400 hidden"></p>
+
+            <!-- MRF Details Content (will be populated by JS) -->
+            <div id="mrfDetailsContent" class="space-y-3 text-gray-700 dark:text-slate-300 text-sm hidden">
+                <div><span class="font-medium">MRF No.:</span> <span id="detail-form-no"></span></div>
+                <div><span class="font-medium">Project Name:</span> <span id="detail-project-name"></span></div>
+                <div><span class="font-medium">MRF Date:</span> <span id="detail-mrf-date"></span></div>
+                <div><span class="font-medium">Item No.:</span> <span id="detail-item-no"></span></div>
+                <div><span class="font-medium">Part Number:</span> <span id="detail-part-no"></span></div>
+                <div><span class="font-medium">Brand:</span> <span id="detail-brand-name"></span></div>
+                <div><span class="font-medium">Description:</span> <span id="detail-description"></span></div>
+                <div><span class="font-medium">Quantity:</span> <span id="detail-qty"></span></div>
+                <div><span class="font-medium">UOM:</span> <span id="detail-uom"></span></div>
+                <div><span class="font-medium">Target Install:</span> <span id="detail-install-date"></span></div>
+                <div><span class="font-medium">Status:</span> <span id="detail-item-status"></span></div>
+                <div><span class="font-medium">Actual Delivery:</span> <span id="detail-actual-delivery"></span></div>
+                <div><span class="font-medium">Remarks:</span> <span id="detail-item-remarks"></span></div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

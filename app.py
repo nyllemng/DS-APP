@@ -2428,6 +2428,59 @@ def get_mrf_by_form_no(form_no):
         if conn:
             conn.close()
 
+# --- API Endpoint for fetching a specific MRF Item by form_no and item_no ---
+@app.route('/api/mrf_details', methods=['GET'])
+@role_required(VALID_ROLES) # Adjust roles as needed
+def get_mrf_item_details():
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        form_no = request.args.get('form_no')
+        item_no = request.args.get('item_no')
+
+        if not form_no or item_no is None:
+            return jsonify({"error": "Missing form_no or item_no parameter"}), 400
+
+        # Ensure item_no is an integer if expected as such in DB
+        try:
+            item_no = int(item_no)
+        except ValueError:
+            return jsonify({"error": "Invalid item_no format"}), 400
+
+        # Query to get specific item details by joining mrf_requests and mrf_items
+        cursor.execute("""
+            SELECT 
+                r.form_no, r.project_name, r.mrf_date, 
+                i.item_no, i.part_no, i.brand_name, i.description,
+                i.qty, i.uom, i.install_date, i.remarks as item_remarks, i.status as item_status,
+                -- Include actual_delivery if it exists in the schema, otherwise use NULL or placeholder
+                NULL as actual_delivery -- Placeholder, replace if you add this column
+            FROM mrf_items i
+            JOIN mrf_requests r ON i.mrf_request_id = r.id
+            WHERE r.form_no = ? AND i.item_no = ?
+        """, (form_no, item_no))
+        
+        item_details = cursor.fetchone()
+        
+        if not item_details:
+            return jsonify({"error": f"MRF Item not found for Form No: {form_no}, Item No: {item_no}"}), 404
+            
+        return jsonify(dict(item_details)), 200
+
+    except sqlite3.Error as db_err:
+        print(f"Error fetching MRF item details for Form No {form_no}, Item No {item_no}: {db_err}")
+        traceback.print_exc()
+        return jsonify({"error": f"Database error fetching MRF item details: {db_err}"}), 500
+    except Exception as e:
+        print(f"Unexpected error fetching MRF item details for Form No {form_no}, Item No {item_no}: {e}")
+        traceback.print_exc()
+        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
 
 # --- Main Execution Block ---
 if __name__ == '__main__':

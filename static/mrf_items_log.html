@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRF Items Log - CMRP Project Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apply dark mode based on system preference or saved setting
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        /* Minimal essential styles - most styling should come from Tailwind & index.html's patterns */
+        /* Styles for nav collapse if not covered by script.js applying classes */
+        #side-nav {
+            transition: width 0.3s ease-in-out;
+            overflow-x: hidden;
+        }
+        #side-nav.nav-collapsed {
+            width: 4rem; /* 64px */
+        }
+        #side-nav.nav-collapsed .nav-link-text,
+        #side-nav.nav-collapsed #nav-content > ul, /* Hide main nav links text container */
+        #side-nav.nav-collapsed #settings-submenu, /* Hide settings submenu */
+        #side-nav.nav-collapsed .nav-section-title /* Hide any section titles if added */ {
+            display: none;
+        }
+        #side-nav.nav-collapsed .nav-link, /* Center icons in links */
+        #side-nav.nav-collapsed #settings-toggle-btn /* Center settings icon */ {
+            justify-content: center;
+        }
+        #side-nav.nav-collapsed #settings-toggle-btn .nav-link-text {
+            display: none;
+        }
+
+        /* Specific styles for MRF Items Log if needed and not conflicting */
+        /* Example: keeping font-size for table if desired, but prefer Tailwind */
+        /* #mrfItemsLogTable th, #mrfItemsLogTable td { font-size: 0.75rem; } */
+
+        .status-select {
+            padding: 0.3rem;
+            border: 1px solid #d1d5db; /* Tailwind: border-gray-300 */
+            border-radius: 0.25rem; /* Tailwind: rounded-sm or rounded-md */
+            font-size: 0.7rem; /* Tailwind: text-xs */
+            min-width: 120px;
+        }
+        .dark .status-select {
+            border-color: #4b5563; /* dark:border-gray-600 */
+            background-color: #374151; /* dark:bg-gray-700 */
+            color: #d1d5db; /* dark:text-gray-300 */
+        }
+
+        .date-input {
+            padding: 0.3rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+        }
+        .dark .date-input {
+            border-color: #4b5563;
+            background-color: #374151;
+            color: #d1d5db;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-slate-300 font-[Inter,sans-serif] flex flex-col min-h-screen">
+
+    <header class="app-header flex justify-between items-center py-3 border-b bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 px-4 md:px-6 lg:px-8 sticky top-0 z-20 flex-shrink-0 shadow-sm">
+        <div class="title-container flex items-center space-x-3">
+            <img src="CMRP Logo Dark.svg" alt="CMRP Logo" class="header-logo h-8 w-auto block dark:hidden">
+            <img src="CMRP Logo Light.svg" alt="CMRP Logo Dark" class="header-logo h-8 w-auto hidden dark:block">
+            <div style="display: none;" class="logo-fallback h-8 w-8 bg-blue-200 dark:bg-sky-700 rounded flex items-center justify-center text-sm font-bold text-blue-700 dark:text-sky-200">DS</div>
+            <h1 class="text-xl font-semibold text-gray-800 dark:text-slate-200">CMRP Project Monitoring</h1>
+            <script>
+                document.querySelectorAll('.header-logo').forEach(logoImg => {
+                    logoImg.onerror = () => {
+                        logoImg.style.display = 'none';
+                        const fallback = logoImg.parentElement.querySelector('.logo-fallback');
+                        if (fallback) fallback.style.display = 'flex';
+                        logoImg.parentElement.querySelectorAll('.header-logo').forEach(otherLogo => {
+                            if (otherLogo !== logoImg) otherLogo.style.display = 'none';
+                        });
+                    };
+                });
+            </script>
+        </div>
+        <div class="header-actions flex items-center space-x-4">
+            <a href="/updates_log" class="button button-secondary button-small" title="View All Updates">Updates Log</a>
+            <div class="user-info-container flex items-center space-x-3 border-l border-gray-300 dark:border-slate-600 pl-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-600 dark:text-slate-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                <span id="user-display-name" class="text-sm font-medium text-gray-700 dark:text-slate-300">User Name</span>
+                <button id="logout-btn" class="button button-danger button-small flex items-center space-x-1" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                    </svg>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-col md:flex-row main-flex-container flex-grow p-4 gap-4">
+
+        <nav id="side-nav" class="w-full md:w-56 lg:w-56 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-md flex-shrink-0 relative flex flex-col border border-gray-200 dark:border-slate-700">
+            <div class="flex justify-start items-center mb-3 pb-2 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <button id="nav-main-toggle-btn" title="Toggle Navigation" class="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                </button>
+                <span class="nav-link-text ml-2 text-xs text-gray-500 dark:text-slate-500">MENU</span>
+            </div>
+            <div id="nav-content" class="flex-grow overflow-y-auto">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/" title="Dashboard" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/forecast" title="View Forecast Page" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.307a11.95 11.95 0 0 1 5.814-5.519l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.941" /></svg>
+                            <span class="nav-link-text ml-2">Forecast</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/project_gantt" title="View Project Gantt (Requires Project ID)" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Gantt Chart</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mrf_form" title="MRF Form" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">MRF Form</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mrf_items_log" title="MRF Items Log" class="nav-link block py-1.5 text-blue-600 dark:text-sky-400 flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded font-semibold bg-gray-100 dark:bg-slate-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">MRF Items Log</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/project_mrf_status" title="Project MRF Status" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 5.25 6.108V18a2.25 2.25 0 0 1 2.25 2.25h.383m12.375-10.206c.073-.076.152-.15.232-.222a21.003 21.003 0 0 0-2.32-2.32c-.072.08-.146.159-.222.232M3.75 7.108c0-1.135.845-2.098 1.976-2.192A48.425 48.425 0 0 1 12 4.5c4.29 0 8.55.655 12.524 1.88a2.25 2.25 0 0 1 1.976 2.192v10.752a2.25 2.25 0 0 1-2.25 2.25H5.25a2.25 2.25 0 0 1-2.25-2.25V7.108Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">Project MRF Status</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="mt-auto flex-shrink-0 pt-2 border-t border-gray-200 dark:border-slate-700">
+                <button id="settings-toggle-btn" title="Settings" class="nav-link block py-1.5 w-full text-left text-gray-700 dark:text-slate-400 hover:text-black dark:hover:text-slate-200 flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995a6.903 6.903 0 010 1.99c0 .382.145.755.438.995l1.003.827c.447.368.574.984.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.496-.645-.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438.613-.438-.995a6.903 6.903 0 010-1.99c0-.382-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075-.124a6.57 6.57 0 01.22-.127c.332.183.582.496-.645-.87l.213-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /></svg>
+                    <span class="nav-link-text ml-2">Settings</span>
+                </button>
+                <ul id="settings-submenu" class="ml-4 mt-1 hidden space-y-1">
+                    <li>
+                        <button id="theme-toggle-btn" class="text-xs text-blue-600 dark:text-sky-400 hover:underline">
+                            Toggle Theme
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="w-full md:flex-1 space-y-4 main-content-area">
+            <section class="mrf-items-log-section bg-white dark:bg-slate-800 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 p-4">
+                <header class="mb-6">
+                    <h1 class="text-2xl font-semibold text-gray-800 dark:text-slate-200 text-center">Material Request Form - Items Log</h1>
+                </header>
+
+                <div class="filter-container mb-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-md flex flex-wrap gap-4 items-center">
+                    <div>
+                        <label for="filterFormNo" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Form No.:</label>
+                        <input type="text" id="filterFormNo" placeholder="Filter by Form No." class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 sm:text-sm rounded-md placeholder-gray-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label for="filterProjectName" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Project Name:</label>
+                        <input type="text" id="filterProjectName" placeholder="Filter by Project" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 sm:text-sm rounded-md placeholder-gray-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label for="filterStatus" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Status:</label>
+                        <select id="filterStatus" class="status-select form-select block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200">
+                            <option value="">All Statuses</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Pending Approval">Pending Approval</option>
+                            <option value="For Purchase Order">For Purchase Order</option>
+                            <option value="Awaiting Delivery">Awaiting Delivery</option>
+                            <option value="Delivered to CMR">Delivered to CMR</option>
+                            <option value="Delivered to Site">Delivered to Site</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="On Hold">On Hold</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 mt-auto">
+                        <button onclick="applyFilters()" class="button button-primary button-small">Apply Filters</button>
+                        <button onclick="resetFilters()" class="button button-secondary button-small">Reset Filters</button>
+                    </div>
+                </div>
+
+                <div class="table-container overflow-x-auto">
+                    <table id="mrfItemsLogTable" class="w-full text-sm text-left table-auto border-collapse">
+                        <thead class="bg-gray-50 dark:bg-slate-900 text-xs uppercase text-gray-600 dark:text-slate-300">
+                            <tr>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">MRF No.</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Project Name</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">MRF Date</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Item</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Part Number</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Brand</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Description</th>
+                                <th class="px-2 py-2 text-right border-b border-gray-200 dark:border-slate-700">Qty</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">UOM</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Target Install</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Status</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Actual Delivery</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Remarks</th>
+                                <th class="px-2 py-2 border-b border-gray-200 dark:border-slate-700">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mrfItemsLogTableBody" class="divide-y divide-gray-200 dark:divide-slate-700">
+                            
+                        </tbody>
+                    </table>
+                </div>
+                <p id="mrfLogLoading" class="text-center mt-4 text-gray-500 dark:text-slate-400">Loading items...</p>
+                <p id="mrfLogError" class="text-center mt-4 text-red-600 dark:text-red-400"></p>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script> 
+    <script src="mrf_items_log.js"></script>
+</body>
+</html>

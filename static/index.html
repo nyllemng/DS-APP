@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS Project Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apply dark mode based on system preference or saved setting
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        /* --- Structural & Non-Color Styles --- */
+        #side-nav {
+            transition: width 0.3s ease-in-out;
+            overflow-x: hidden;
+        }
+
+            #side-nav.nav-collapsed {
+                width: 4rem; /* 64px */
+            }
+
+                #side-nav.nav-collapsed .nav-link-text,
+                #side-nav.nav-collapsed #nav-content > ul, /* Hide main nav links text container */
+                #side-nav.nav-collapsed #settings-submenu, /* Hide settings submenu */
+                #side-nav.nav-collapsed .nav-section-title /* Hide any section titles if added */ {
+                    display: none;
+                }
+
+                #side-nav.nav-collapsed .nav-link, /* Center icons in links */
+                #side-nav.nav-collapsed #settings-toggle-btn /* Center settings icon */ {
+                    justify-content: center;
+                }
+                    /* Ensure text within settings toggle is hidden */
+                    #side-nav.nav-collapsed #settings-toggle-btn .nav-link-text {
+                        display: none;
+                    }
+
+
+        .modal {
+            z-index: 50;
+        }
+        /* Use Tailwind's hidden class */
+        /* .modal.hidden { display: none; } */
+
+        .update-item {
+            border-bottom-width: 1px;
+            padding-bottom: 0.5rem; /* pb-2 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+            .update-item:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+        .update-completed .update-text {
+            text-decoration: line-through;
+        }
+
+        /* Keep loading/error states for visibility */
+        .loading td, .error td {
+            text-align: center;
+            padding: 1rem; /* p-4 */
+            font-style: italic;
+        }
+
+        .dark .loading td, .dark .error td {
+            color: #9ca3af; /* dark:text-slate-400 */
+        }
+
+        .loading td {
+            color: #6b7280; /* text-gray-500 */
+        }
+
+        .error td {
+            color: #dc2626; /* text-red-600 */
+        }
+
+        .dark .error td {
+            color: #f87171; /* dark:text-red-400 */
+        }
+
+
+        /* Base feedback message style - colors applied dynamically by JS */
+        .feedback {
+            padding: 0.75rem 1rem; /* p-3 */
+            margin-bottom: 1rem; /* mb-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid transparent;
+            font-size: 0.875rem; /* text-sm */
+            display: none; /* Initially hidden */
+        }
+
+        .feedback-success {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+        /* green-100, green-300, green-800 */
+        .dark .feedback-success {
+            background-color: #166534;
+            border-color: #4ade80;
+            color: #dcfce7;
+        }
+        /* dark:bg-green-800, dark:border-green-500, dark:text-green-100 */
+        .feedback-error {
+            background-color: #fee2e2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        /* red-100, red-300, red-800 */
+        .dark .feedback-error {
+            background-color: #991b1b;
+            border-color: #f87171;
+            color: #fee2e2;
+        }
+        /* dark:bg-red-800, dark:border-red-400, dark:text-red-100 */
+        .feedback-info {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+            color: #1e40af;
+        }
+        /* blue-100, blue-300, blue-800 */
+        .dark .feedback-info {
+            background-color: #1e40af;
+            border-color: #60a5fa;
+            color: #dbeafe;
+        }
+        /* dark:bg-blue-800, dark:border-blue-400, dark:text-blue-100 */
+        .feedback-warning {
+            background-color: #fef3c7;
+            border-color: #fcd34d;
+            color: #92400e;
+        }
+        /* amber-100, amber-300, amber-800 */
+        .dark .feedback-warning {
+            background-color: #92400e;
+            border-color: #fbbf24;
+            color: #fef3c7;
+        }
+        /* dark:bg-amber-800, dark:border-amber-400, dark:text-amber-100 */
+
+
+        /* --- Base Table Styles --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.5rem; /* p-2 */
+            border-bottom-width: 1px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.875rem; /* text-sm */
+        }
+
+        thead th {
+            font-weight: 600; /* font-semibold */
+            font-size: 0.75rem; /* text-xs */
+            text-transform: uppercase;
+            letter-spacing: 0.05em; /* tracking-wider */
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* --- Width Utilities (keep as they are structural) --- */
+        .w-16 {
+            width: 4rem;
+        }
+
+        .w-20 {
+            width: 5rem;
+        }
+
+        .w-24 {
+            width: 6rem;
+        }
+
+        .w-28 {
+            width: 7rem;
+        }
+
+        .w-32 {
+            width: 8rem;
+        }
+
+        .w-48 {
+            width: 12rem;
+        }
+
+        .w-64 {
+            width: 16rem;
+        }
+
+        /* --- Specific Column Styles --- */
+        .updates-column {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .action-column {
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .sortable-header {
+            cursor: pointer;
+        }
+
+        .sort-icon {
+            display: inline-block;
+            margin-left: 0.25rem;
+            opacity: 0.5;
+        }
+
+        .forecast-indicator {
+            font-size: 0.7rem;
+            margin-left: 2px;
+            vertical-align: text-top;
+        }
+
+        /* --- Base Action Button (colors applied directly via Tailwind) --- */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem; /* p-1 */
+            margin: 0 0.125rem; /* mx-0.5 */
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid transparent;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1;
+        }
+
+            .btn-action svg {
+                width: 1em;
+                height: 1em;
+            }
+
+        /* --- Content Area & Table Container --- */
+        .main-content-area {
+            overflow-y: auto;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        /* --- Base Form Input (colors applied directly via Tailwind) --- */
+        .form-input {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem; /* px-3 py-2 */
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.25rem; /* leading-tight */
+            appearance: none;
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+            .form-input:focus {
+                outline: 0;
+            }
+            /* Invalid stays red */
+            .form-input.is-invalid {
+                border-color: #ef4444; /* red-500 */
+            }
+
+        .dark .form-input.is-invalid {
+            border-color: #f87171; /* red-400 */
+        }
+
+        .form-input.is-invalid:focus {
+            box-shadow: 0 0 0 0.2rem rgb(239 68 68 / 0.25);
+        }
+
+        .dark .form-input.is-invalid:focus {
+            box-shadow: 0 0 0 0.2rem rgb(248 113 113 / 0.25);
+        }
+
+        textarea.form-input {
+            min-height: 4rem;
+        }
+
+        /* Collapsible Section */
+        .collapsible-content.hidden {
+            display: none;
+        }
+
+        .toggle-icon svg {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .collapsed .toggle-icon svg {
+            transform: rotate(-90deg);
+        }
+
+        /* --- General Button Base --- */
+        .button {
+            display: inline-block;
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .button-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem; /* text-xs */
+        }
+
+        /* --- Button Colors (Examples - Use Tailwind classes directly if preferred) --- */
+        .button-primary {
+            background-color: #2563eb;
+            border-color: #1d4ed8;
+            color: white;
+        }
+            /* blue-600 */
+            .button-primary:hover {
+                background-color: #1d4ed8;
+                border-color: #1e40af;
+            }
+        /* blue-700 */
+        .dark .button-primary {
+            background-color: #3b82f6;
+            border-color: #2563eb;
+            color: white;
+        }
+            /* dark:blue-500 */
+            .dark .button-primary:hover {
+                background-color: #2563eb;
+                border-color: #1d4ed8;
+            }
+        /* dark:blue-600 */
+        .button-secondary {
+            background-color: #e5e7eb;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+            /* gray-200 */
+            .button-secondary:hover {
+                background-color: #d1d5db;
+                border-color: #9ca3af;
+            }
+        /* gray-300 */
+        .dark .button-secondary {
+            background-color: #4b5563;
+            border-color: #6b7280;
+            color: #d1d5db;
+        }
+            /* dark:gray-600 */
+            .dark .button-secondary:hover {
+                background-color: #6b7280;
+                border-color: #4b5563;
+            }
+        /* dark:gray-500 */
+        .button-success {
+            background-color: #22c55e;
+            border-color: #16a34a;
+            color: white;
+        }
+            /* green-500 */
+            .button-success:hover {
+                background-color: #16a34a;
+                border-color: #15803d;
+            }
+        /* green-600 */
+        .dark .button-success {
+            background-color: #22c55e;
+            border-color: #16a34a;
+            color: #f9fafb;
+        }
+            /* dark:green-500 */
+            .dark .button-success:hover {
+                background-color: #16a34a;
+                border-color: #15803d;
+            }
+        /* dark:green-600 */
+        .button-danger {
+            background-color: #ef4444;
+            border-color: #dc2626;
+            color: white;
+        }
+            /* red-500 */
+            .button-danger:hover {
+                background-color: #dc2626;
+                border-color: #b91c1c;
+            }
+        /* red-600 */
+        .dark .button-danger {
+            background-color: #ef4444;
+            border-color: #dc2626;
+            color: #f9fafb;
+        }
+            /* dark:red-500 */
+            .dark .button-danger:hover {
+                background-color: #dc2626;
+                border-color: #b91c1c;
+            }
+        /* dark:red-600 */
+        .button-warning {
+            background-color: #f59e0b;
+            border-color: #d97706;
+            color: white;
+        }
+            /* amber-500 */
+            .button-warning:hover {
+                background-color: #d97706;
+                border-color: #b45309;
+            }
+        /* amber-600 */
+        .dark .button-warning {
+            background-color: #f59e0b;
+            border-color: #d97706;
+            color: #f9fafb;
+        }
+            /* dark:amber-500 */
+            .dark .button-warning:hover {
+                background-color: #d97706;
+                border-color: #b45309;
+            }
+        /* dark:amber-600 */
+        .button-info {
+            background-color: #0ea5e9;
+            border-color: #0284c7;
+            color: white;
+        }
+            /* sky-500 */
+            .button-info:hover {
+                background-color: #0284c7;
+                border-color: #0369a1;
+            }
+        /* sky-600 */
+        .dark .button-info {
+            background-color: #38bdf8;
+            border-color: #0ea5e9;
+            color: #0f172a;
+        }
+            /* dark:sky-400 */
+            .dark .button-info:hover {
+                background-color: #0ea5e9;
+                border-color: #0284c7;
+            }
+        /* dark:sky-500 */
+        .button-teal {
+            background-color: #14b8a6;
+            border-color: #0d9488;
+            color: white;
+        }
+            /* teal-500 */
+            .button-teal:hover {
+                background-color: #0d9488;
+                border-color: #0f766e;
+            }
+        /* teal-600 */
+        .dark .button-teal {
+            background-color: #2dd4bf;
+            border-color: #14b8a6;
+            color: #1e293b;
+        }
+            /* dark:teal-400 */
+            .dark .button-teal:hover {
+                background-color: #14b8a6;
+                border-color: #0d9488;
+            }
+        /* dark:teal-500 */
+        .button-indigo {
+            background-color: #6366f1;
+            border-color: #4f46e5;
+            color: white;
+        }
+            /* indigo-500 */
+            .button-indigo:hover {
+                background-color: #4f46e5;
+                border-color: #4338ca;
+            }
+        /* indigo-600 */
+        .dark .button-indigo {
+            background-color: #818cf8;
+            border-color: #6366f1;
+            color: #1e293b;
+        }
+            /* dark:indigo-400 */
+            .dark .button-indigo:hover {
+                background-color: #6366f1;
+                border-color: #4f46e5;
+            }
+        /* dark:indigo-500 */
+
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-slate-300 font-[Inter,sans-serif] flex flex-col min-h-screen">
+
+    <header class="app-header flex justify-between items-center py-3 border-b bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 px-4 md:px-6 lg:px-8 sticky top-0 z-20 flex-shrink-0 shadow-sm">
+        <div class="title-container flex items-center space-x-3">
+            <img src="CMRP Logo Dark.svg" alt="CMRP Logo" class="header-logo h-8 w-auto block dark:hidden">
+            <img src="CMRP Logo Light.svg" alt="CMRP Logo Dark" class="header-logo h-8 w-auto hidden dark:block">
+            <div style="display: none;" class="logo-fallback h-8 w-8 bg-blue-200 dark:bg-sky-700 rounded flex items-center justify-center text-sm font-bold text-blue-700 dark:text-sky-200">DS</div>
+            <h1 class="text-xl font-semibold text-gray-800 dark:text-slate-200">CMRP Project Monitoring</h1>
+            <script>
+                // Show fallback if logo fails to load (Keep this small inline script)
+                document.querySelectorAll('.header-logo').forEach(logoImg => {
+                    logoImg.onerror = () => {
+                        logoImg.style.display = 'none';
+                        const fallback = logoImg.parentElement.querySelector('.logo-fallback');
+                        if (fallback) fallback.style.display = 'flex';
+                        // Attempt to hide the other logo variant if it exists and loaded
+                        logoImg.parentElement.querySelectorAll('.header-logo').forEach(otherLogo => {
+                            if (otherLogo !== logoImg) otherLogo.style.display = 'none';
+                        });
+                    };
+                });
+            </script>
+        </div>
+
+        <div class="header-actions flex items-center space-x-4">
+            <a href="/updates_log" class="button button-secondary button-small" title="View All Updates">Updates Log</a>
+
+            <div class="user-info-container flex items-center space-x-3 border-l border-gray-300 dark:border-slate-600 pl-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-600 dark:text-slate-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                <span id="user-display-name" class="text-sm font-medium text-gray-700 dark:text-slate-300">User Name</span>
+                <button id="logout-btn" class="button button-danger button-small flex items-center space-x-1" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                    </svg>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-col md:flex-row main-flex-container flex-grow p-4 gap-4">
+
+        <nav id="side-nav" class="w-full md:w-56 lg:w-56 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-md flex-shrink-0 relative flex flex-col border border-gray-200 dark:border-slate-700">
+            <div class="flex justify-start items-center mb-3 pb-2 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <button id="nav-main-toggle-btn" title="Toggle Navigation" class="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                </button>
+                <span class="nav-link-text ml-2 text-xs text-gray-500 dark:text-slate-500">MENU</span>
+            </div>
+            <div id="nav-content" class="flex-grow overflow-y-auto">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/" title="Dashboard" class="nav-link block py-1.5 text-blue-600 dark:text-sky-400 flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded font-semibold bg-gray-100 dark:bg-slate-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/forecast" title="View Forecast Page" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.307a11.95 11.95 0 0 1 5.814-5.519l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.941" /></svg>
+                            <span class="nav-link-text ml-2">Forecast</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/project_gantt" title="View Project Gantt (Requires Project ID)" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Gantt Chart</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mrf_form" title="MRF Form" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">MRF Form</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/mrf_items_log" title="MRF Items Log" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">MRF Items Log</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/project_mrf_status" title="Project MRF Status" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 5.25 6.108V18a2.25 2.25 0 0 1 2.25 2.25h.383m12.375-10.206c.073-.076.152-.15.232-.222a21.003 21.003 0 0 0-2.32-2.32c-.072.08-.146.159-.222.232M3.75 7.108c0-1.135.845-2.098 1.976-2.192A48.425 48.425 0 0 1 12 4.5c4.29 0 8.55.655 12.524 1.88a2.25 2.25 0 0 1 1.976 2.192v10.752a2.25 2.25 0 0 1-2.25 2.25H5.25a2.25 2.25 0 0 1-2.25-2.25V7.108Z" />
+                            </svg>
+                            <span class="nav-link-text ml-2">Project MRF Status</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="mt-auto flex-shrink-0 pt-2 border-t border-gray-200 dark:border-slate-700">
+                <button id="settings-toggle-btn" title="Settings" class="nav-link block py-1.5 w-full text-left text-gray-700 dark:text-slate-400 hover:text-black dark:hover:text-slate-200 flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995a6.903 6.903 0 010 1.99c0 .382.145.755.438.995l1.003.827c.447.368.574.984.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.496-.645-.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438-.995a6.903 6.903 0 010-1.99c0-.382-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075-.124a6.57 6.57 0 01.22-.127c.332.183-.582.496-.645-.87l.213-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /></svg>
+                    <span class="nav-link-text ml-2">Settings</span>
+                </button>
+                <ul id="settings-submenu" class="ml-4 mt-1 hidden space-y-1">
+                    <li>
+                        <button id="theme-toggle-btn" class="text-xs text-blue-600 dark:text-sky-400 hover:underline">
+                            Toggle Theme
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="w-full md:flex-1 space-y-4 main-content-area">
+
+            <div id="feedbackMessage" class="feedback sticky top-[calc(theme(spacing.12)+1px)] z-10" role="alert"></div>
+
+            <section id="dashboard" class="dashboard-section bg-white dark:bg-slate-800 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 p-4">
+                <h2 class="text-lg font-semibold mb-3 text-blue-600 dark:text-sky-400">Dashboard</h2>
+
+                <div class="mb-4 pb-4 border-b border-gray-200 dark:border-slate-700">
+                    <label for="dashboard-bs-filter" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Filter by Business Segment:</label>
+                    <select id="dashboard-bs-filter" name="dashboard-bs-filter" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 w-full md:w-1/3">
+                        <option value="all">All Segments</option>
+                        <option value="DS">DS (Digitalization Solutions)</option>
+                        <option value="SE">SE (Smart Energy)</option>
+                    </select>
+                </div>
+
+                <div id="dashboardLoading" class="loading text-center p-4" style="display: none;">Loading...</div>
+                <div id="dashboardError" class="error text-center p-4"></div>
+
+                <div id="dashboardMetrics" class="dashboard-metrics-container grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="flex flex-col items-center p-3 bg-gray-50 dark:bg-slate-700 rounded shadow-sm border border-gray-200 dark:border-slate-600">
+                        <span id="metricTotalRemaining" class="text-2xl font-bold text-gray-900 dark:text-slate-100">...</span>
+                        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1 text-center">Backlogs</p>
+                        <svg class="mt-2 h-5 w-5 text-gray-500 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-gray-50 dark:bg-slate-700 rounded shadow-sm border border-gray-200 dark:border-slate-600">
+                        <span id="metricCompletedCount" class="text-2xl font-bold text-gray-900 dark:text-slate-100">...</span>
+                        <p id="metricCompletedLabel" class="text-sm text-gray-600 dark:text-slate-400 mt-1 text-center">Completed (This Yr)</p>
+                        <svg class="mt-2 h-5 w-5 text-green-500 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-gray-50 dark:bg-slate-700 rounded shadow-sm border border-gray-200 dark:border-slate-600">
+                        <span id="metricActiveCount" class="text-2xl font-bold text-gray-900 dark:text-slate-100">...</span>
+                        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1 text-center">Active Projects</p>
+                        <svg class="mt-2 h-5 w-5 text-gray-500 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>
+                    </div>
+                    <div class="flex flex-col items-center p-3 bg-gray-50 dark:bg-slate-700 rounded shadow-sm border border-gray-200 dark:border-slate-600">
+                        <span id="metricNewCount" class="text-2xl font-bold text-gray-900 dark:text-slate-100">...</span>
+                        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1 text-center">New Projects (15d)</p>
+                        <svg class="mt-2 h-5 w-5 text-gray-500 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
+                    </div>
+                </div>
+
+                <div class="monthly-metrics-container grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded border border-gray-200 dark:border-slate-600">
+                    <h3 class="col-span-full text-lg font-semibold mb-2 text-gray-700 dark:text-slate-300">Monthly Forecast vs Invoiced (Current Year)</h3>
+
+                    <div id="metric-month-block-jan" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">January</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-jan">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-jan">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-jan">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-feb" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">February</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-feb">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-feb">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-feb">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-mar" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">March</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-mar">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-mar">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-mar">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-apr" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">April</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-apr">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-apr">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-apr">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-may" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">May</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-may">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-may">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-may">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-jun" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">June</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-jun">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-jun">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-jun">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-jul" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">July</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-jul">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-jul">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-jul">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-aug" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">August</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-aug">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-aug">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-aug">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-sep" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">September</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-sep">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-sep">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-sep">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-oct" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">October</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-oct">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-oct">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-oct">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-nov" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">November</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-nov">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-nov">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-nov">(-%)</div>
+                    </div>
+
+                    <div id="metric-month-block-dec" class="p-3 bg-white dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 shadow-sm">
+                        <div class="font-medium text-gray-600 dark:text-slate-400">December</div>
+                        <div class="text-xl font-semibold text-green-600 dark:text-green-400 mt-1" id="metric-invoiced-dec">₱0.00</div>
+                        <div class="text-xs text-blue-600 dark:text-sky-400 mt-0.5" id="metric-forecast-dec">(Fcst: ₱0.00)</div>
+                        <div class="text-xs text-gray-500 dark:text-slate-500 mt-0.5" id="metric-percentage-dec">(-%)</div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="activeProjectsSection" class="projects-section collapsible bg-white dark:bg-slate-800 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 p-4">
+                <div class="section-header flex flex-wrap justify-between items-center gap-2 mb-3">
+                    <div class="flex items-center">
+                        <button type="button" class="toggle-section-btn p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400 mr-2 flex-shrink-0" data-target="active-projects-content" aria-expanded="true">
+                            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg></span>
+                        </button>
+                        <h2 class="text-lg font-semibold text-blue-600 dark:text-sky-400">Active Projects</h2>
+                    </div>
+                    <div class="header-actions flex flex-wrap gap-2">
+                        <button id="addProjectBtn" class="button button-primary button-small">Add Project</button>
+                        <button id="open-csv-modal-btn" class="button button-teal button-small">Upload CSV</button>
+                        <button id="export-active-csv-btn" class="button button-success button-small">Export Active</button>
+                    </div>
+                </div>
+                <div class="collapsible-content" id="active-projects-content">
+                    <div class="mb-4">
+                        <label for="active-projects-filter" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Filter Active Projects:</label>
+                        <input type="text" id="active-projects-filter" name="active-projects-filter" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 w-full md:w-1/2 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Search by name, number, client, etc...">
+                    </div>
+                    <div id="activeProjectsLoading" class="loading text-center p-4" style="display: none;">Loading projects...</div>
+                    <div id="activeProjectsError" class="error text-center p-4"></div>
+                    <div class="table-container">
+                        <table id="active-project-table" class="w-full text-sm text-left table-auto border-collapse">
+                            <thead class="bg-gray-50 dark:bg-slate-900 text-xs uppercase text-gray-600 dark:text-slate-300">
+                                <tr>
+                                    <th class="px-2 py-2 w-16 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="business_segment" title="Business Segment">BS<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="project_no">Project #<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-48 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="project_name">Project Name<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-32 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="client">Client<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-28 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="amount">Amount <span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-20 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="status">Status (%)<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-28 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="remaining_amount">Remaining <span class="sort-icon">▼</span></th>
+                                    <th class="px-2 py-2 w-16 text-center border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="total_running_weeks">Weeks <span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="po_date">PO Date<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-20 text-center border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="pic">PIC<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-64 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="latest_update">Latest Update<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="date_completed">Completed<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-32 action-column border-b border-gray-200 dark:border-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeProjectsTableBody" class="divide-y divide-gray-200 dark:divide-slate-700">
+                                <tr class="loading"><td colspan="13" class="text-center p-4 text-gray-500 dark:text-slate-400">Loading projects...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="completedProjectsSection" class="projects-section collapsible collapsed bg-white dark:bg-slate-800 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 p-4">
+                <div class="section-header flex flex-wrap justify-between items-center gap-2 mb-3">
+                    <div class="flex items-center">
+                        <button type="button" class="toggle-section-btn p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400 mr-2 flex-shrink-0" data-target="completed-projects-content" aria-expanded="false">
+                            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg></span>
+                        </button>
+                        <h2 class="text-lg font-semibold text-blue-600 dark:text-sky-400">Completed Projects</h2>
+                    </div>
+                    <div class="header-actions flex flex-wrap gap-2">
+                        <button id="export-completed-csv-btn" class="button button-success button-small">Export Completed</button>
+                    </div>
+                </div>
+                <div class="collapsible-content hidden" id="completed-projects-content">
+                    <div class="mb-4">
+                        <label for="completed-projects-filter" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Filter Completed Projects:</label>
+                        <input type="text" id="completed-projects-filter" name="completed-projects-filter" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 w-full md:w-1/2 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Search by name, number, client, etc...">
+                    </div>
+                    <div id="completedProjectsLoading" class="loading text-center p-4" style="display: none;">Loading completed projects...</div>
+                    <div id="completedProjectsError" class="error text-center p-4"></div>
+                    <div class="table-container">
+                        <table id="completed-project-table" class="w-full text-sm text-left table-auto border-collapse">
+                            <thead class="bg-gray-50 dark:bg-slate-900 text-xs uppercase text-gray-600 dark:text-slate-300">
+                                <tr>
+                                    <th class="px-2 py-2 w-16 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="business_segment" title="Business Segment">BS<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="project_no">Project #<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-48 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="project_name">Project Name<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-32 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="client">Client<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-28 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="amount">Amount <span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-20 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="status">Status (%)<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-28 text-right border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="remaining_amount">Remaining <span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-16 text-center border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="total_running_weeks">Weeks <span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="po_date">PO Date<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-20 text-center border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="pic">PIC<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-64 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="latest_update">Latest Update<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-24 border-b border-gray-200 dark:border-slate-700 sortable-header" data-sort-key="date_completed">Completed<span class="sort-icon"></span></th>
+                                    <th class="px-2 py-2 w-32 action-column border-b border-gray-200 dark:border-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedProjectsTableBody" class="divide-y divide-gray-200 dark:divide-slate-700">
+                                <tr class="loading"><td colspan="12" class="text-center p-4 text-gray-500 dark:text-slate-400">Loading completed projects...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <div id="modals-container">
+
+        <div id="addProjectModal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 items-center justify-center p-4">
+            <div class="modal-content relative mx-auto p-5 border border-gray-300 dark:border-slate-600 w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-slate-800">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-slate-200">Add New Project</h2>
+                    <button type="button" class="close-modal-btn cursor-pointer text-3xl font-light leading-none text-gray-600 dark:text-slate-400 hover:text-black dark:hover:text-white" aria-label="Close">&times;</button>
+                </div>
+                <form id="addProjectForm" class="mt-4 space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label for="add-project_name" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Project Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="add-project_name" name="project_name" required class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-project_no" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Project #</label>
+                            <input type="text" id="add-project_no" name="project_no" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-client" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Client</label>
+                            <input type="text" id="add-client" name="client" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-amount" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Amount (₱)</label>
+                            <input type="number" id="add-amount" name="amount" step="0.01" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-status" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Status (%)</label>
+                            <input type="number" id="add-status" name="status" min="0" max="100" step="0.1" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500" placeholder="0.0">
+                        </div>
+                        <div>
+                            <label for="add-po_date" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PO Date</label>
+                            <input type="date" id="add-po_date" name="po_date" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-po_no" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PO No.</label>
+                            <input type="text" id="add-po_no" name="po_no" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-date_completed" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Date Completed</label>
+                            <input type="date" id="add-date_completed" name="date_completed" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-pic" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PIC</label>
+                            <input type="text" id="add-pic" name="pic" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-ds" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Business Segment</label>
+                            <input type="text" id="add-ds" name="ds" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="add-year" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Year</label>
+                            <input type="number" id="add-year" name="year" min="1900" max="2100" step="1" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500" placeholder="e.g., 2025">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="add-address" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Address</label>
+                            <textarea id="add-address" name="address" rows="2" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="button button-primary w-full mt-4">Add Project</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="editProjectModal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <div class="modal-content relative mx-auto p-5 border border-gray-300 dark:border-slate-600 w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-slate-800">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-slate-200">Edit Project</h2>
+                    <button type="button" class="close-modal-btn cursor-pointer text-3xl font-light leading-none text-gray-600 dark:text-slate-400 hover:text-black dark:hover:text-white" aria-label="Close">&times;</button>
+                </div>
+                <form id="editProjectForm" class="mt-4 space-y-3" data-project-id="">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-project_name" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Project Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="edit-project_name" name="project_name" required class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-project_no" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Project #</label>
+                            <input type="text" id="edit-project_no" name="project_no" class="form-input bg-gray-100 dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-500 dark:text-slate-400 cursor-not-allowed" readonly disabled title="Project Number cannot be changed here">
+                        </div>
+                        <div>
+                            <label for="edit-client" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Client</label>
+                            <input type="text" id="edit-client" name="client" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-amount" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Amount (₱)</label>
+                            <input type="number" id="edit-amount" name="amount" step="0.01" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-status" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Status (%)</label>
+                            <input type="number" id="edit-status" name="status" min="0" max="100" step="0.1" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 focus:border-blue-500 dark:focus:border-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-po_date" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PO Date</label>
+                            <input type="date" id="edit-po_date" name="po_date" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-po_no" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PO No.</label>
+                            <input type="text" id="edit-po_no" name="po_no" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-date_completed" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Date Completed</label>
+                            <input type="date" id="edit-date_completed" name="date_completed" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-pic" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">PIC</label>
+                            <input type="text" id="edit-pic" name="pic" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-ds" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Business Segment</label>
+                            <input type="text" id="edit-ds" name="ds" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label for="edit-year" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Year</label>
+                            <input type="number" id="edit-year" name="year" min="1900" max="2100" step="1" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500" placeholder="e.g., 2025">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="edit-address" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Address</label>
+                            <textarea id="edit-address" name="address" rows="2" class="form-input bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="button button-success w-full mt-4">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="projectModal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <div class="modal-content relative mx-auto p-5 border border-gray-300 dark:border-slate-600 w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-slate-800">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-slate-200">Project Details</h2>
+                    <button type="button" data-modal-hide="projectModal" class="close-modal-btn cursor-pointer text-3xl font-light leading-none text-gray-600 dark:text-slate-400 hover:text-black dark:hover:text-white" aria-label="Close">&times;</button>
+                </div>
+                <div class="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2 text-sm text-gray-700 dark:text-slate-300">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
+                        <div><strong>Project Name:</strong> <span id="modalProjectName" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Project #:</strong> <span id="modalProjectNo" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Client:</strong> <span id="modalClient" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Amount:</strong> <span id="modalAmount" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Status:</strong> <span id="modalStatus" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Remaining:</strong> <span id="modalRemaining" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>PO Date:</strong> <span id="modalPODate" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>PO No:</strong> <span id="modalPONo" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>PIC:</strong> <span id="modalPIC" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Completed:</strong> <span id="modalDateCompleted" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Run Weeks:</strong> <span id="modalRunningWeeks" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>DS:</strong> <span id="modalDS" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div><strong>Year:</strong> <span id="modalYear" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                        <div class="md:col-span-3"><strong>Address:</strong> <span id="modalAddress" class="text-gray-900 dark:text-slate-100">N/A</span></div>
+                    </div>
+                    <div class="pt-4 border-t border-gray-200 dark:border-slate-700">
+                        <h3 class="text-lg font-semibold mb-2 text-gray-700 dark:text-slate-200">Updates</h3>
+                        <div id="updatesLoading" class="text-sm text-gray-500 dark:text-slate-400" style="display: none;">Loading updates...</div>
+                        <div id="updatesError" class="text-sm text-red-600 dark:text-red-400"></div>
+                        <ul id="projectUpdatesList" class="list-none p-0 space-y-2 mb-4">
+                            <li class="text-sm text-gray-500 dark:text-slate-400">Loading...</li>
+                        </ul>
+                        <form id="addUpdateForm" class="mt-4 space-y-2" data-project-id="">
+                            <label for="update_text" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Add New Update:</label>
+                            <textarea id="update_text" name="update_text" rows="2" required class="form-input w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500" placeholder="Enter update details..."></textarea>
+                            <div>
+                                <label for="update_due_date" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Due Date (Optional):</label>
+                                <input type="date" id="update_due_date" name="update_due_date" class="form-input text-sm bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                            </div>
+                            <button type="submit" class="button button-primary button-small">Add Update</button>
+                            <div id="addUpdateMessage" class="message text-xs mt-1"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="csv-upload-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <div class="modal-content relative mx-auto p-5 border border-gray-300 dark:border-slate-600 w-full max-w-md shadow-lg rounded-md bg-white dark:bg-slate-800">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-slate-200">Upload Projects from CSV</h2>
+                    <button type="button" data-modal-hide="csv-upload-modal" class="close-modal-btn cursor-pointer text-3xl font-light leading-none text-gray-600 dark:text-slate-400 hover:text-black dark:hover:text-white" aria-label="Close">&times;</button>
+                </div>
+                <form id="csvUploadForm" class="mt-4">
+                    <div class="form-group mb-4">
+                        <label for="csv-file" class="block text-sm font-medium mb-1 text-gray-700 dark:text-slate-300">Choose CSV File:</label>
+                        <input type="file" id="csv-file" name="csv-file" accept=".csv" required class="block w-full text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-sky-900 file:text-blue-700 dark:file:text-sky-300 hover:file:bg-blue-100 dark:hover:file:bg-sky-800 text-gray-500 dark:text-slate-400 cursor-pointer border border-gray-300 dark:border-slate-600 rounded-md p-1">
+                        <small class="form-hint text-xs text-gray-500 dark:text-slate-500 mt-1 block"> Required: Project Name. Optional: Business Segment (column header typically 'BS' or 'business_segment'), Year, Project #, Client, Amount, Status (%), PO Date, PO No., Date Completed, PIC, Address. Ensure all column headers precisely match expected values for correct data mapping. </small>
+                    </div>
+                    <button type="submit" class="button button-teal w-full">Upload CSV</button>
+                </form>
+                <div id="csv-message" class="message mt-3 text-sm whitespace-pre-line text-gray-700 dark:text-slate-300"></div>
+            </div>
+        </div>
+
+        <div id="forecast-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+            <div class="modal-content relative mx-auto p-5 border border-gray-300 dark:border-slate-600 w-full max-w-md shadow-lg rounded-md bg-white dark:bg-slate-800">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-slate-200" id="forecast-modal-title">Add Forecast</h3>
+                    <button type="button" data-modal-hide="forecast-modal" class="close-modal-btn cursor-pointer text-3xl font-light leading-none text-gray-600 dark:text-slate-400 hover:text-black dark:hover:text-white" aria-label="Close">&times;</button>
+                </div>
+                <input type="hidden" id="forecast-modal-project-id">
+                <form id="forecast-form" class="mt-4 px-2 py-3 space-y-4 text-left">
+                    <p class="text-sm text-gray-600 dark:text-slate-400">Project: <span id="forecast-project-info" class="font-semibold text-gray-800 dark:text-slate-200">N/A</span></p>
+                    <p class="text-sm text-gray-500 dark:text-slate-500 italic">Enter Amount OR Percent OR Deduction Percent (if applicable).</p>
+                    <div>
+                        <label for="forecast-amount" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Amount (₱)</label>
+                        <input type="number" id="forecast-amount" name="forecast-amount" step="0.01" class="form-input mt-1 w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label for="forecast-percent" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Percent (%)</label>
+                        <input type="number" id="forecast-percent" name="forecast-percent" step="0.1" class="form-input mt-1 w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="forecast-deduct-checkbox" name="is_deduction" type="checkbox" value="true"
+                               class="h-4 w-4 text-blue-600 dark:text-sky-500 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-sky-500 bg-white dark:bg-slate-700">
+                        <label for="forecast-deduct-checkbox" class="ml-2 block text-sm text-gray-700 dark:text-slate-300 select-none">
+                            Treat as deduction (Reduces remaining amount)?
+                        </label>
+                    </div>
+
+                    <div id="forecast-deduction-percent-container" style="display: none;">
+                        <label for="forecast-deduction-percent" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Deduction Percent (%)</label>
+                        <input type="number" id="forecast-deduction-percent" name="deduction_percent" min="0" max="100" step="0.1" class="form-input mt-1 w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500" placeholder="e.g., 10 for 10%">
+                        <small class="text-xs text-gray-500 dark:text-slate-500 mt-1">Use only if 'Treat as deduction' is checked and you want to calculate deduction by percentage.</small>
+                    </div>
+                    <div>
+                        <label for="forecast-date" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="forecast-date" name="forecast_date" required class="form-input mt-1 w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-slate-200 focus:ring-blue-500 dark:focus:ring-sky-500 placeholder-gray-400 dark:placeholder-slate-500">
+                    </div>
+                    <p id="forecast-error-message" class="text-xs text-red-600 dark:text-red-400 mt-2 h-4"></p>
+                    <div class="items-center pt-3 border-t border-gray-200 dark:border-slate-700">
+                        <button id="forecast-submit-btn" type="submit" form="forecast-form" class="button button-success w-full"> Add Forecast </button>
+                        <button id="forecast-cancel-btn" type="button" data-modal-hide="forecast-modal" class="button button-secondary w-full mt-2"> Cancel </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <script src="script.js" defer></script>
+</body>
+</html>

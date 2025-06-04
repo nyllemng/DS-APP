@@ -1,0 +1,82 @@
+DS,Year,Project #,Client,Project Name,Amount,Status,Remaining Amount,Total Running Weeks,PO Date,PO No.,Date Completed,PIC,Updates,Address
+DS,2023,CMRP21090329,ACI,Proscenium RPAT and Museum BMS,7946428.57,70,2383928.571,188,9/9/2021,,,JNL," Waiting for Siemens Remote Support - Apr14
+-Siemens Deployment moved - Apr24",
+DS,2024,CMRP24020067,Unilab,Amherst OT Network Devices,14858481.42,85,2228772.213,28,10/3/2024,,,EMP,"Checking for Site Requirements -Apr07
+SCR - to check with Sir Joshua- 
+Affidavit - to check with Sir Joshua-
+RFP- to check with Sir Joshua
+to create GC w/ Fin & Megaworld
+Delivery onsite - Apr21",
+DS,2024,CMRP24040105,Megaworld,No.5 Upper East Avenue BMS,2633467.86,20,2106774.288,41,7/5/2024,,,JNL,"Generate Additional task report for re-testing-Apr7
+Alignment Meeting with Difsys - Apr11",
+DS,2025,CMRP25030095,URC,URC Pamp 1 Upgrade of Silo PLC Desktop PC,2245652.41,30,1571956.687,1,45757,400159992,,,"for signing of Progress Report - Apr10
+to submit Invoice onsite -Apr10
+53% Signed Progress Report - Apr10
+Gateway Delivery - May 2025
+Stainless Panel Delivery- 
+FOC Termination -for MRF",
+DS,2025,CMRP25010029,Aboitiz,Aboitiz TMI Nasipit RTU Integration,2016434.77,30,1411504.339,7,2/25/2025,,,DOTX,"for signing of Progress Report - Apr10
+to submit Invoice onsite -Apr10
+53% Signed Progress Report - Apr10
+Shutdown Works - Apr13-21 ",
+DS,2025,CMRP24070287,URC,URC ESMO Upgrade of Piattos Mixer PLC Controls,1963392.86,30,1374375.002,1,45758,400142053,,,,
+DS,2024,CMRP24080304,NPI,Netpac Gentry BMS Installation - CORPO,1842946.43,30,1290062.501,27,10/11/2024,HG24-0913,,JNL,Delivery of TIM IRC Module- July 2025,
+DS,2024,CMRP23050125,URC,URC Pampanga-1 Central Monitoring System Integration Phase II,2703103.95,53,1270458.857,28,10/1/2024,400109104,,KRM,,
+DS,2024,CMRP24090403,URC,URC Pamp-1 XO Process PLC Upgrade,2100012.29,53,987005.7763,23,11/4/2024,400128754,,JBN,need to breakdown billing-Apr10,
+DS,2024,CMRP24060234,ATTSC,Brent School Chiller-BMS Integration,945187.05,30,661630.935,22,11/12/2024,24-146,,RAS,,
+DS,2024,CMRP24050176,LBI,LBI MDI Refrigeration Automation,4897994.12,87,636739.2356,31,45548,,,EMP,,
+DS,2023,CMRP23060160,URC,URC SP1 Green Bean Silo Automation,5853561.07,90,585356.107,93,45113,,,RPP,100% submitted -Apr08,
+DS,2023,CMRP22030161,Fluence,Fluence BESS Mexico 3 SAS SCADA,3125000,85,468750,103,45041,,,DOTX,"Submitted Drawings for Approval - Apr7
+Meeting onsite for drawing discussion -Apr10
+Move Execution after Holyweek - Apr21",
+DS,2024,CMRP24120539,Unilab,Amherst Delta Additional AP Coverage,455365.23,0,455365.23,21,45615,,,EMP,Waiting for LBI to finalize Panel Rewiring- Apr7,
+DS,2024,CMRP24060224,URC,URC Cavite Dynamite SCADA PLC Upgrade,1197956,63,443243.72,36,45509,,,RPP,"to coordinate ma'am Kei for processing of 95% for the installed Paddle Switch - Apr11
+Schedule of Testing - Apr22",
+DS,2025,CMRP24100453,NPI,NPI Globe STT Davao BMS,629245.62,30,440471.934,8,45706,,,RPP,,
+DS,2025,CMRP25020047,URC,URC Pamp2 Boiler PLC Upgrade,434910.71,0,434910.71,1,45757,400159505,,JNL,,
+DS,2024,CMRP24070247,Megaworld,Megaworld VGC Terminal Canopy EE & AUX Works,357686.61,0,357686.61,38,45496,,,DIFSYS,"Shutdown Works -Apr13
+62% Progress Report Submitted - Apr8
+Other Components not yet ordered c/o SE",
+DS,2024,CMRP24040149,URC,URC Cavite Enrober Electrical control upgrade,778174.11,55,350178.3495,36,45509,400110436,,RAS,,
+DS,2024,CMRP24070294,Maxeon,Maxeon SunPower Max8 Pilot Line SCADA Integration,1382550,75,345637.5,33,45531,,,JBN,,
+DS,2023,CMRP21030093,URC,URC Automation Load Management,3292260.71,90,329226.071,204,44335,,,JNL,,
+DS,2024,CMRP24080303,NPI,Netpac Gentry BMS Installation - RESI,423600,30,296520,33,8/29/2024,HG24-0884,,JNL,,
+DS,2024,CMRP23110415,Maxeon,Maxeon Sunpower FAB4 TGMS SCADA,4796441.61,95,239822.0805,60,2/19/2024,,,JBN,"Pending Commissioning
+To Coordinate with Sir Brent ",
+DS,2024,CMRP24060240,URC,URC Cavite Pretzel Oven Electrical Panel Upgrade,493886.61,59,202493.5101,36,8/5/2024,400110434,,RAS,Delivery -May2025,
+DS,2024,CMRP24100455,URC,PRL Extruder System Rehabilitation,397321.43,50,198660.715,25,10/23/2024,400126886,,DOTX,Shutdown Works -Apr13,
+DS,2023,CMRP21070245,Magnolia,Magnolia Data Logger Additionals,613504.92,80,122700.984,112,2/19/2023,,,JBN,Waiting for STT Deployment Date,
+DS,2023,CMRP23080260,ADI,ADI B1 BMS Upgrade,7855462.12,99,78554.6212,81,45197,,,RPP,Shutdown Works -Apr13,
+DS,2023,CMRP22030138,Mechsys,Mechsys Boiler Integration to BMS,237861.09,90,23786.109,114,2/7/2023,,,JNL,"Sir Kenneth will Send TA Contact  - Apr7
+to Coordinate requirement for Billing - Apr10
+Follow up Sent - Apr11",
+DS,2023,CMRP22090427,JX Nippon,JX Nippon PLC Migration,5456505,100,0,90,12/22/2022,,9/10/2024,Others,"Shutdown Works -Apr17
+62% Progress Report Submitted - Apr8
+Other Components not yet ordered c/o SE -Apr10",
+DS,2023,CMRP22020054,URC,URC Binan 3 Machines Project,1964752.68,100,0,85,44827,,5/5/2024,JNL,To Deploy for Training - Apr 22,
+DS,2023,CMRP22100473,URC,URC Pamp-1 Corn Chips Line Automation,6264671.98,100,0,80,44879,,5/25/2024,RAS,Pending works testing of Compressor Load Management,
+DS,2023,CMRP21010032,URC,URC Cavite Jaguar Chiller and Metering System,2677663.18,100,0,76,44880,,4/28/2024,RPP,need to breakdown items-Apr10,
+DS,2023,CMRP23040093,Tann Philippines,Tann Philippines BMS to PLC Upgrade,5254780.08,100,0,90,45126,25-010-23,4/8/2025,JBN,To Deploy for Training - Apr 22,
+DS,2023,CMRP23070202,Netpacific,NPI Cavite BMS Programming,760850.4,100,0,1,,,,JNL,,
+DS,2024,CMRP23110399,Megaworld,Megaworld GLOBAL ONE BUILDING BMS Rehab,3035714.29,100,0,34,45358,,10/30/2024,Others,Completion Report -Apr10,
+DS,2024,CMRP24040130,Megaworld,Megaworld Pasudeco Tower BMS Variation,669643,100,0,19,45614,,3/24/2025,RAV,,
+DS,2023,CMRP22050220,URC,URC-Canlubang Hot Water and Choco Fat Dosing Automation,1920398.21,100,0,27,45161,,2/24/2024,RAS,,
+DS,2024,CMRP24010025,JX Metals,JX Metals TRCF PT1 PLC Upgrade Option 1,7661666.61,100,0,39,45475,,3/27/2025,JNL,,
+DS,2023,CMRP23090292,URC,URC CAL2 Piattos Fryer PLC Upgrade,568947.14,100,0,81,45195,,4/10/2025,DOTX,,
+DS,2023,CMRP22080382,URC,URC Centralized Utilities and Metering Pamp Plant 1,3073417.8,100,0,1,,,,JNL,,
+DS,2023,CMRP20080195,URC,URC 1 Boiler Rehabilitation,2799107.14,100,0,1,,,,Others,,
+DS,2024,CMRP23100347,Unilab,Unilab Glatt Panel Retrofitting,1244147.58,100,0,1,,,,RAS,,
+DS,2024,CMRP24040158,ATTSC,ATTSC RCBC Plaza Chiller-BMS Integration,1196629.55,100,0,1,,,,EMP,,
+DS,2024,CMRP23090319B,STMicro,STMicro Warehouse Freezer FMCS Integration,714564.3,100,0,1,,,,RAS,,
+DS,2023,CMRP23070204,URC,URC Cavite Steam Metering,625352.7,100,0,1,,,,RPV,,
+DS,2023,CMRP23070203,URC,URC Cavite Power Metering,569653.63,100,0,1,,,,RPV,,
+DS,2024,CMRP23060160C,URC,URC SP1 Green Bean Silo Automation Automation,445980.08,100,0,1,,,,RPP,,
+DS,2024,CMRP24030088,NPI,Netpacific MSU Marawi BMS,432000,100,0,1,,,,Others,,
+DS,2023,CMRP23070230,URC,URC Canlubang Pretzel Line 3 Additional Interlocking and Alarms,407325.49,100,0,1,,,,Others,,
+DS,2024,CMRP24060209,ADI,ADI Power Meter BMS Integration,267161.5,100,0,1,,,,RPP,,
+DS,2023,CMRP23080276,Mega Sardines,Mega Sardines Zamboanga HMI Reprogramming,40178.57,100,0,1,,,,Others,,
+DS,2024,CMRP24040114,BBP,BBP Uptown Mall Valve Switch Works,27877.9,100,0,1,,,,Others,,
+DS,2024,CMRP24040128,LBI,LBI RCS Cabuyao Onsite Troubleshooting,25429.92,100,0,1,,,,JNL,,
+DS,2024,CMRP24070272,Unilab,ADI C1 Air Dryer 1,18000,100,0,1,,,,RPP,,
+DS,2025,CMRP24120518,JX Metals,JX Metals Slitting Machine Panel Rehab,340000,100,0,10,45665,,3/18/2025,JNL,,
+DS,2023,CMRP23090313,Megaworld,Megaworld Pasudeco Tower BMS,3405377.319,100,0,73,45253,,4/10/2025,RAS,,

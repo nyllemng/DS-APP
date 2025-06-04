@@ -1,0 +1,52 @@
+﻿/* --- CSS for Auto-Expanding Updates Column --- */
+
+/* Target the specific table cell for updates */
+.updates-column {
+    /* Allow text to wrap onto multiple lines */
+    white-space: normal !important; /* Use !important to override potential Tailwind conflicts if needed */
+    /* Help break long words if they would overflow */
+    word-wrap: break-word; /* Older property */
+    overflow-wrap: break-word; /* Newer, preferred property */
+    /* Ensure content isn't hidden if it overflows vertically */
+    overflow: visible !important;
+    /* Let content determine the height */
+    height: auto !important;
+    /* Align content to the top */
+    vertical-align: top !important;
+    /* Explicitly set max-width (w-64 = 16rem = 256px) */
+    /* This helps enforce wrapping with table-layout: auto */
+    max-width: 256px !important;
+}
+
+/* Ensure table rows themselves don't have fixed heights */
+#project-table tr,
+#completed-projects-table tr {
+    height: auto;
+}
+
+/* Ensure table cells in general align top unless overridden */
+#project-table td,
+#completed-projects-table td {
+    height: auto;
+    vertical-align: top; /* Apply top alignment generally */
+}
+
+/* Ensure the tables use auto layout */
+/* This is crucial for rows adjusting to content height */
+#project-table,
+#completed-projects-table {
+    table-layout: auto !important; /* Reinforce auto layout */
+}
+
+/* --- End Auto-Expanding CSS --- */
+
+/* Add any other custom styles for your project below */
+
+/* Example: Basic body padding if needed */
+body {
+    padding: 1rem; /* Add some overall padding */
+}
+
+/* You can add styles previously in the inline <style> block here if desired, */
+/* but many were likely handled by Tailwind. */
+

@@ -1,0 +1,59 @@
+id,name,amount,progress,updates,pic
+CMRP24020067,Amherst OT Network Devices,14858481.42,70.00%,,EMP
+CMRP21090329,Proscenium RPAT and Museum BMS,7946428.57,85.00%,,JNL
+CMRP23080260,ADI B1 BMS Upgrade,7855462.12,20.00%,,RPP
+CMRP24010025,JX Metals TRCF PT1 PLC Upgrade Option 1,7661666.61,30.00%,,JNL
+CMRP22100473,URC Pamp-1 Corn Chips Line Automation,6264671.98,30.00%,,RAS
+CMRP23060160,URC SP1 Green Bean Silo Automation,5853561.07,30.00%,,RPP
+CMRP22090427,JX Nippon PLC Migration,5456505,30.00%,,Others
+CMRP23040093,Tann Philippines BMS to PLC Upgrade,5254780.08,53.00%,,JBN
+CMRP24050176,LBI MDI Refrigeration Automation,4897994.12,53.00%,,EMP
+CMRP23110415,Maxeon Sunpower FAB4 TGMS SCADA,4796441.61,30.00%,,JBN
+CMRP23090313,Megaworld Pasudeco Tower BMS,3405377.319,87.00%,,RAS
+CMRP21030093,URC Automation Load Management,3292260.71,90.00%,,JNL
+CMRP22030161,Fluence BESS Mexico 3 SAS SCADA,3125000,85.00%,,DOTX
+CMRP22080382,URC Centralized Utilities and Metering Pamp Plant 1,3073417.8,0.00%,,JNL
+CMRP23110399,Megaworld GLOBAL ONE BUILDING BMS Rehab,3035714.29,63.00%,,Others
+CMRP20080195,URC 1 Boiler Rehabilitation,2799107.14,30.00%,,Others
+CMRP23050125,URC Pampanga-1 Central Monitoring System Integration Phase II,2703103.95,0.00%,,KRM
+CMRP21010032,URC Cavite Jaguar Chiller and Metering System,2677663.18,0.00%,,RPP
+CMRP24040105,No.5 Upper East Avenue BMS,2633467.86,55.00%,,JNL
+CMRP25030095,URC Pamp 1 Upgrade of Silo PLC Desktop PC,2245652.41,75.00%,,
+CMRP24090403,URC Pamp-1 XO Process PLC Upgrade,2100012.29,90.00%,,JBN
+CMRP25010029,Aboitiz TMI Nasipit RTU Integration,2016434.77,30.00%,,DOTX
+CMRP22020054,URC Binan 3 Machines Project,1964752.68,95.00%,,JNL
+CMRP24070287,URC ESMO Upgrade of Piattos Mixer PLC Controls,1963392.86,60.00%,,
+CMRP22050220,URC-Canlubang Hot Water and Choco Fat Dosing Automation,1920398.21,59.00%,,RAS
+CMRP24080304,Netpac Gentry BMS Installation - CORPO,1842946.43,50.00%,,JNL
+CMRP24070294,Maxeon SunPower Max8 Pilot Line SCADA Integration,1382550,95.00%,,JBN
+CMRP23100347,Unilab Glatt Panel Retrofitting,1244147.58,80.00%,,RAS
+CMRP24060224,URC Cavite Dynamite SCADA PLC Upgrade,1197956,99.00%,,RPP
+CMRP24040158,ATTSC RCBC Plaza Chiller-BMS Integration,1196629.55,90.00%,,EMP
+CMRP24060234,Brent School Chiller-BMS Integration,945187.05,,,RAS
+CMRP24040149,URC Cavite Enrober Electrical control upgrade,778174.11,,,RAS
+CMRP24080301,Power Meter Installation & FMCS Integration,775600,,,RAS
+CMRP23070202,NPI Cavite BMS Programming,760850.4,,,JNL
+CMRP23090319B,STMicro Warehouse Freezer FMCS Integration,714564.3,,,RAS
+CMRP24040130,Megaworld Pasudeco Tower BMS Variation,669643,,,RAV
+CMRP24100453,NPI Globe STT Davao BMS,629245.62,,,RPP
+CMRP23070204,URC Cavite Steam Metering,625352.7,,,RPV
+CMRP21070245,Magnolia Data Logger Additionals,613504.92,,,JBN
+CMRP23070203,URC Cavite Power Metering,569653.63,,,RPV
+CMRP23090292,URC CAL2 Piattos Fryer PLC Upgrade,568947.14,,,DOTX
+CMRP24060240,URC Cavite Pretzel Oven Electrical Panel Upgrade,493886.61,,,RAS
+CMRP24120539,Amherst Delta Additional AP Coverage,455365.23,,,EMP
+CMRP23060160C,URC SP1 Green Bean Silo Automation Automation,445980.08,,,RPP
+CMRP25020047,URC Pamp2 Boiler PLC Upgrade,434910.71,,,JNL
+CMRP24030088,Netpacific MSU Marawi BMS,432000,,,Others
+CMRP24080303,Netpac Gentry BMS Installation - RESI,423600,,,JNL
+CMRP23070230,URC Canlubang Pretzel Line 3 Additional Interlocking and Alarms,407325.49,,,Others
+CMRP24100455,PRL Extruder System Rehabilitation,397321.43,,,DOTX
+CMRP24070247,Megaworld VGC Terminal Canopy EE & AUX Works,357686.61,,,DIFSYS
+CMRP24120518,JX Metals Slitting Machine Panel Rehab,340000,,,JNL
+CMRP24060209,ADI Power Meter BMS Integration,267161.5,,,RPP
+CMRP22030138,Mechsys Boiler Integration to BMS,237861.09,,,JNL
+CMRP25010032,STMicro Copper and Ammonia FMCS Integration,82624.94,,,RAS
+CMRP23080276,Mega Sardines Zamboanga HMI Reprogramming,40178.57,,,Others
+CMRP24040114,BBP Uptown Mall Valve Switch Works,27877.9,,,Others
+CMRP24040128,LBI RCS Cabuyao Onsite Troubleshooting,25429.92,,,JNL
+CMRP24070272,ADI C1 Air Dryer 1,18000,,,RPP

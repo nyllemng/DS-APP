@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Updates Log</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Add specific styles for this page if needed, or keep in style.css */
+        body:not(.dark-mode) .moon-icon {
+            display: none;
+        }
+
+        body.dark-mode .sun-icon {
+            display: none;
+        }
+
+        .log-section {
+            margin-bottom: 2rem;
+        }
+        /* Add space between tables */
+        /* Basic styling for the filter */
+        .filter-container {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: var(--header-bg-light); /* Light background for filter area */
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark-mode .filter-container {
+            background-color: var(--header-bg-dark);
+            border-color: var(--border-dark);
+        }
+
+        .filter-container label {
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .filter-container select {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            min-width: 200px; /* Give dropdown some width */
+            flex-grow: 1; /* Allow it to grow */
+            max-width: 400px; /* But not too wide */
+        }
+
+        body.dark-mode .filter-container select {
+            background-color: #495057;
+            color: var(--text-dark);
+            border-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header class="app-header">
+            <div class="title-container">
+                <h1>Project Updates Log</h1>
+            </div>
+            <div class="header-actions">
+                <button id="export-log-btn" class="button button-success button-small">Export Log</button>
+                <a href="/" class="button button-secondary button-small">Back to Main Dashboard</a>
+                <button id="dark-mode-toggle" title="Toggle Dark/Light Mode" class="icon-button">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.836 17.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.906 17.894a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM4.5 12a.75.75 0 01-.75.75H1.5a.75.75 0 010-1.5h2.25a.75.75 0 01.75.75zM6.106 6.106a.75.75 0 001.06-1.06l-1.591-1.59a.75.75 0 00-1.061 1.06l1.591 1.591z"></path></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69a.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.7-10.5-10.5 0-3.51 1.713-6.622 4.43-8.564a.75.75 0 01.819.162z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="filter-container">
+                <label for="project-filter-select">Filter by Project:</label>
+                <select id="project-filter-select">
+                    <option value="">-- All Projects --</option>
+                </select>
+            </div>
+            <section class="card log-section">
+                <h2>Pending Updates</h2>
+                <div class="table-container">
+                    <table id="pending-updates-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Update Text</th>
+                                <th style="text-align: center;">Status</th>
+                                <th>Logged On</th>
+                                <th>Completed On</th>
+                                <th style="text-align: center;">Duration (Days)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-updates-table-body">
+                            <tr class="loading"><td colspan="7">Loading pending updates...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card log-section">
+                <h2>Completed Updates</h2>
+                <div class="table-container">
+                    <table id="completed-updates-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Update Text</th>
+                                <th style="text-align: center;">Status</th>
+                                <th>Logged On</th>
+                                <th>Completed On</th>
+                                <th style="text-align: center;">Duration (Days)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-updates-table-body">
+                            <tr class="loading"><td colspan="7">Loading completed updates...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+    </div>
+    <script src="updates_log.js"></script>
+    <script>
+        // Simple dark mode toggle reuse
+        const darkModeToggleBtnLog = document.getElementById('dark-mode-toggle');
+        const bodyElementLog = document.body;
+
+        function enableDarkModeLog() {
+            if (!bodyElementLog) return;
+            bodyElementLog.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        }
+        function disableDarkModeLog() {
+            if (!bodyElementLog) return;
+            bodyElementLog.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+        function toggleDarkModeLog() {
+            if (!bodyElementLog) return;
+            if (bodyElementLog.classList.contains('dark-mode')) disableDarkModeLog();
+            else enableDarkModeLog();
+        }
+
+        if (darkModeToggleBtnLog) {
+            darkModeToggleBtnLog.addEventListener('click', toggleDarkModeLog);
+            const savedThemeLog = localStorage.getItem('theme');
+            if (savedThemeLog === 'dark') {
+                enableDarkModeLog();
+            } else {
+                disableDarkModeLog();
+            }
+        } else {
+            console.warn("Dark mode toggle button not found on updates_log.html");
+        }
+    </script>
+</body>
+</html>

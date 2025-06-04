@@ -1,0 +1,654 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backlogs per Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Apply dark mode based on system preference or saved setting
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        /* --- Structural & Non-Color Styles --- */
+        #side-nav {
+            transition: width 0.3s ease-in-out;
+            overflow-x: hidden;
+        }
+
+            #side-nav.nav-collapsed {
+                width: 4rem; /* 64px */
+            }
+
+                #side-nav.nav-collapsed .nav-link-text,
+                #side-nav.nav-collapsed #nav-content > ul,
+                #side-nav.nav-collapsed #settings-submenu,
+                #side-nav.nav-collapsed .nav-section-title {
+                    display: none;
+                }
+
+                #side-nav.nav-collapsed .nav-link,
+                #side-nav.nav-collapsed #settings-toggle-btn {
+                    justify-content: center;
+                }
+
+                    #side-nav.nav-collapsed #settings-toggle-btn .nav-link-text {
+                        display: none;
+                    }
+
+        .modal {
+            z-index: 50;
+        }
+        /* Use Tailwind's hidden class */
+        /* .modal.hidden { display: none; } */
+
+        .update-item {
+            border-bottom-width: 1px;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+            .update-item:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+        .update-completed .update-text {
+            text-decoration: line-through;
+        }
+
+        /* Keep loading/error states for visibility */
+        .loading td, .error td {
+            text-align: center;
+            padding: 1rem;
+            font-style: italic;
+        }
+
+        .dark .loading td, .dark .error td {
+            color: #9ca3af;
+        }
+
+        .loading td {
+            color: #6b7280;
+        }
+
+        .error td {
+            color: #dc2626;
+        }
+
+        .dark .error td {
+            color: #f87171;
+        }
+
+        /* Base feedback message style - colors applied dynamically by JS */
+        .feedback {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .feedback-success {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .dark .feedback-success {
+            background-color: #166534;
+            border-color: #4ade80;
+            color: #dcfce7;
+        }
+
+        .feedback-error {
+            background-color: #fee2e2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        .dark .feedback-error {
+            background-color: #991b1b;
+            border-color: #f87171;
+            color: #fee2e2;
+        }
+
+        .feedback-info {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+            color: #1e40af;
+        }
+
+        .dark .feedback-info {
+            background-color: #1e40af;
+            border-color: #60a5fa;
+            color: #dbeafe;
+        }
+
+        .feedback-warning {
+            background-color: #fef3c7;
+            border-color: #fcd34d;
+            color: #92400e;
+        }
+
+        .dark .feedback-warning {
+            background-color: #92400e;
+            border-color: #fbbf24;
+            color: #fef3c7;
+        }
+
+        /* --- Chart Styles --- */
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .dark .chart-container {
+            background: #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.1), 0 2px 4px -1px rgba(255, 255, 255, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-slate-300 font-[Inter,sans-serif] flex flex-col min-h-screen">
+    <header class="app-header flex justify-between items-center py-3 border-b bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 px-4 md:px-6 lg:px-8 sticky top-0 z-20 flex-shrink-0 shadow-sm">
+        <div class="title-container flex items-center space-x-3">
+            <img src="CMRP Logo Dark.svg" alt="CMRP Logo" class="header-logo h-8 w-auto block dark:hidden">
+            <img src="CMRP Logo Light.svg" alt="CMRP Logo Dark" class="header-logo h-8 w-auto hidden dark:block">
+            <div style="display: none;" class="logo-fallback h-8 w-8 bg-blue-200 dark:bg-sky-700 rounded flex items-center justify-center text-sm font-bold text-blue-700 dark:text-sky-200">DS</div>
+            <h1 class="text-xl font-semibold text-gray-800 dark:text-slate-200">DS Project Monitoring</h1>
+            <script>
+                // Show fallback if logo fails to load
+                document.querySelectorAll('.header-logo').forEach(logoImg => {
+                    logoImg.onerror = () => {
+                        logoImg.style.display = 'none';
+                        const fallback = logoImg.parentElement.querySelector('.logo-fallback');
+                        if (fallback) fallback.style.display = 'flex';
+                         logoImg.parentElement.querySelectorAll('.header-logo').forEach(otherLogo => {
+                            if (otherLogo !== logoImg) otherLogo.style.display = 'none';
+                        });
+                    };
+                });
+            </script>
+        </div>
+        <div class="header-actions flex items-center space-x-4">
+            <a href="/" class="button button-secondary button-small">Back to Dashboard</a>
+        </div>
+    </header>
+
+    <div class="flex flex-col md:flex-row main-flex-container flex-grow p-4 gap-4">
+        <nav id="side-nav" class="w-full md:w-56 lg:w-56 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-md flex-shrink-0 relative flex flex-col border border-gray-200 dark:border-slate-700">
+            <div class="flex justify-start items-center mb-3 pb-2 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <button id="nav-main-toggle-btn" title="Toggle Navigation" class="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                </button>
+                <span class="nav-link-text ml-2 text-xs text-gray-500 dark:text-slate-500">MENU</span>
+            </div>
+            <div id="nav-content" class="flex-grow overflow-y-auto">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="/" title="Dashboard" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/forecast" title="View Forecast Page" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.307a11.95 11.95 0 0 1 5.814-5.519l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.941" /></svg>
+                            <span class="nav-link-text ml-2">Forecast</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/project_gantt" title="View Project Gantt (Requires Project ID)" class="nav-link block py-1.5 text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" /></svg>
+                            <span class="nav-link-text ml-2">Gantt Chart</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="mt-auto flex-shrink-0 pt-2 border-t border-gray-200 dark:border-slate-700">
+                <button id="settings-toggle-btn" title="Settings" class="nav-link block py-1.5 w-full text-left text-gray-700 dark:text-slate-400 hover:text-black dark:hover:text-white flex items-center px-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995a6.903 6.903 0 010 1.99c0 .382.145.755.438.995l1.003.827c.447.368.574.984.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.075.124a6.57 6.57 0 01-.22.127c-.332.183-.582.496-.645-.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.003-.827c.293-.24.438-.613-.438-.995a6.903 6.903 0 010-1.99c0-.382-.145-.755-.438-.995l-1.003-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.075-.124a6.57 6.57 0 01.22-.127c.332.183.582.496-.645-.87l.213-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /></svg>
+                </button>
+                <ul id="settings-submenu" class="ml-4 mt-1 hidden space-y-1">
+                    <li>
+                        <button id="theme-toggle-btn" class="text-xs text-blue-600 dark:text-sky-400 hover:underline">
+                            Toggle Theme
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="w-full md:flex-1 space-y-4 main-content-area">
+            <div id="feedbackMessage" class="feedback sticky top-[calc(theme(spacing.12)+1px)] z-10" role="alert"></div>
+
+            <section id="backlogsChartSection" class="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 p-4">
+                <h2 class="text-lg font-semibold mb-3 text-blue-600 dark:text-sky-400">Backlogs per Client</h2>
+                <div class="chart-container">
+                    <canvas id="backlogsChart"></canvas>
+                </div>
+                <div id="backlogsLoading" class="loading text-center p-4" style="display: none;">Loading chart data...</div>
+                <div id="backlogsError" class="error text-center p-4"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="modals-container">
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sideNav = document.getElementById('side-nav');
+        const navToggleBtn = document.getElementById('nav-main-toggle-btn');
+        const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+        const settingsSubMenu = document.getElementById('settings-submenu');
+        const modalsContainer = document.getElementById('modals-container');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
+
+        function getElement(id) {
+            const element = document.getElementById(id);
+            return element;
+        }
+
+        function displayFeedback(message, type = 'info') {
+            const feedbackDiv = getElement('feedbackMessage');
+            if (!feedbackDiv) {
+                console.warn("Feedback div ('feedbackMessage') not found, falling back to console log.");
+                console.log(`${type.toUpperCase()}: ${message}`);
+                return;
+            }
+            feedbackDiv.textContent = message;
+            const typeClasses = {
+                success: 'feedback-success',
+                error: 'feedback-error',
+                info: 'feedback-info',
+                warning: 'feedback-warning'
+            };
+            feedbackDiv.className = `feedback ${typeClasses[type] || typeClasses['info']} p-3 rounded border mb-4`;
+            feedbackDiv.style.display = 'block';
+            setTimeout(() => {
+                if (feedbackDiv.textContent === message) {
+                    clearFeedback();
+                }
+            }, 7000);
+        }
+
+        function clearFeedback() {
+            const feedbackDiv = getElement('feedbackMessage');
+            if (feedbackDiv) {
+                feedbackDiv.textContent = '';
+                feedbackDiv.style.display = 'none';
+                feedbackDiv.className = 'feedback';
+            }
+        }
+
+        function safe_int(value, fallback = null) {
+            if (value === null || value === undefined || String(value).trim() === '') {
+                return fallback;
+            }
+            const num = parseInt(String(value).trim(), 10);
+            return isNaN(num) ? fallback : num;
+        }
+
+        function safeFloat(value, fallback = NaN) {
+            if (value === null || value === undefined) return fallback;
+            const strValue = String(value).replace(/[$,₱%]/g, '').replace(/,/g, '').trim();
+            if (strValue === '') return fallback;
+            const num = parseFloat(strValue);
+            return isNaN(num) ? fallback : num;
+        }
+
+        function formatCurrency(value, fallback = 'N/A') {
+            const numVal = safeFloat(value);
+            if (isNaN(numVal)) return fallback;
+            try {
+                return new Intl.NumberFormat('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(numVal);
+            } catch (e) {
+                console.error("Currency formatting error:", e);
+                return `₱${numVal.toFixed(2)}`;
+            }
+        }
+
+        function formatPercent(value, fallback = 'N/A') {
+            const numVal = safeFloat(value);
+            if (isNaN(numVal)) return fallback;
+            return `${numVal.toFixed(1)}%`;
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            let date = null;
+            try {
+                if (dateStr instanceof Date && !isNaN(dateStr.getTime())) {
+                    return new Date(Date.UTC(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate()));
+                }
+                const strInput = String(dateStr).trim();
+                if (!strInput) return null;
+                const isoMatch = strInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (isoMatch) {
+                    const year = parseInt(isoMatch[1], 10), month = parseInt(isoMatch[2], 10), day = parseInt(isoMatch[3], 10);
+                    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                        date = new Date(Date.UTC(year, month - 1, day));
+                        if (!isNaN(date.getTime()) && date.getUTCFullYear() === year && (date.getUTCMonth() + 1) === month && date.getUTCDate() === day) {
+                            return date;
+                        }
+                    }
+                }
+                const slashMatch = strInput.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (slashMatch) {
+                    const year = parseInt(slashMatch[3], 10), month = parseInt(slashMatch[1], 10), day = parseInt(slashMatch[2], 10);
+                    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                        date = new Date(Date.UTC(year, month - 1, day));
+                        if (!isNaN(date.getTime()) && date.getUTCFullYear() === year && (date.getUTCMonth() + 1) === month && date.getUTCDate() === day) {
+                            return date;
+                        }
+                    }
+                }
+                date = new Date(strInput);
+                if (!isNaN(date.getTime())) {
+                    const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                    if (!isNaN(utcDate.getTime())) return utcDate;
+                }
+            } catch (e) {
+                console.error("Error parsing date:", dateStr, e);
+            }
+            return null;
+        }
+
+        function formatDate(dateStr, fallback = 'N/A') {
+          if (!dateStr) return fallback;
+          try {
+            const date = parseDate(dateStr);
+            return date ? `${String(date.getUTCMonth() + 1).padStart(2, '0')}/${String(date.getUTCDate()).padStart(2, '0')}/${date.getUTCFullYear()}` : fallback;
+          } catch (e) {
+            console.error("Error formatting date:", dateStr, e);
+            return fallback;
+          }
+        }
+
+        async function apiFetch(url, options = {}) {
+            const method = options.method || 'GET';
+            console.log(`API Fetch: ${method} ${url}`);
+            const defaultHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                defaultHeaders['Authorization'] = `Bearer ${token}`;
+            }
+            const config = { ...options, headers: { ...defaultHeaders, ...(options.headers || {}) } };
+            if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
+                config.body = JSON.stringify(config.body);
+            }
+            try {
+                const response = await fetch(url, config);
+                if (response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login.html';
+                    throw new Error('Unauthorized');
+                }
+                if (response.status === 204) {
+                    return { message: "Operation successful (No Content)." };
+                }
+                const contentType = response.headers.get("content-type");
+                let responseData;
+                try {
+                    if (contentType?.includes("application/json")) {
+                        responseData = await response.json();
+                    } else {
+                        const text = await response.text();
+                        if (!response.ok) {
+                            throw new Error(text || `HTTP Error ${response.status}`);
+                        }
+                        responseData = { message: `OK (${response.status})`, data: text };
+                    }
+                } catch (bodyError) {
+                    console.error(`Error reading/parsing body (Status: ${response.status}):`, bodyError);
+                    if (!response.ok) {
+                      throw new Error(`HTTP Error ${response.status}, failed to read/parse body.`);
+                    }
+                    responseData = { message: `OK (${response.status}), but error reading/parsing body.` };
+                }
+                if (!response.ok) {
+                    const errorMessage = responseData?.error || responseData?.message || `HTTP Error ${response.status}`;
+                    const error = new Error(errorMessage);
+                    error.data = responseData;
+                    error.status = response.status;
+                    throw error;
+                }
+                return responseData;
+            } catch (error) {
+                console.error(`Fetch Error (${method} ${url}):`, error);
+                if (!error.status && !error.data && error.message !== 'Unauthorized') {
+                    throw new Error(`Network error or cannot connect to API at ${url}. Ensure the backend server is running and accessible.`);
+                }
+                throw error;
+            }
+        }
+
+        async function fetchBacklogsData() {
+            const API_BASE_URL = '/api';
+            const PROJECTS_API = `${API_BASE_URL}/projects`;
+            const backlogsLoadingEl = getElement('backlogsLoading');
+            const backlogsErrorEl = getElement('backlogsError');
+            if (backlogsLoadingEl) backlogsLoadingEl.style.display = 'block';
+            if (backlogsErrorEl) backlogsErrorEl.textContent = '';
+            try {
+                const projects = await apiFetch(PROJECTS_API);
+                const backlogs = {};
+                projects.forEach(project => {
+                    if (project.remaining_amount > 0) {
+                        if (backlogs[project.client]) {
+                            backlogs[project.client] += project.remaining_amount;
+                        } else {
+                            backlogs[project.client] = project.remaining_amount;
+                        }
+                    }
+                });
+
+                const chartData = {
+                    labels: Object.keys(backlogs),
+                    datasets: [{
+                        label: 'Backlogs (₱)',
+                        data: Object.values(backlogs),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)',
+                            'rgba(199, 123, 22, 0.6)',
+                            'rgba(99, 200, 150, 0.6)',
+                            'rgba(220, 170, 100, 0.6)',
+                            'rgba(100, 100, 200, 0.6)',
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                             'rgba(199, 123, 22, 1)',
+                            'rgba(99, 200, 150, 1)',
+                            'rgba(220, 170, 100, 1)',
+                            'rgba(100, 100, 200, 1)',
+                        ],
+                        borderWidth: 1
+                    }]
+                };
+
+                const chartOptions = {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Backlogs per Client',
+                            font: {
+                                size: 16
+                            },
+                            padding: 10
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '₱' + value;
+                                }
+                            }
+                        }
+                    }
+                };
+
+                const chartCtx = document.getElementById('backlogsChart').getContext('2d');
+                new Chart(chartCtx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: chartOptions
+                });
+
+            } catch (error) {
+                console.error("Failed to fetch backlogs data:", error);
+                if (backlogsErrorEl) backlogsErrorEl.textContent = `Error: ${error.message}`;
+            } finally {
+                if (backlogsLoadingEl) backlogsLoadingEl.style.display = 'none';
+            }
+        }
+
+        function applyInitialNavState(sideNavElement) {
+            try {
+                if (localStorage.getItem('navCollapsed') === 'true') {
+                    sideNavElement?.classList.add('nav-collapsed');
+                    console.log("Applying collapsed state from localStorage.");
+                } else {
+                    sideNavElement?.classList.remove('nav-collapsed');
+                    console.log("Applying expanded state from localStorage (or default).");
+                }
+            } catch (e) {
+console.warn("Could not read nav state from localStorage:", e);
+            }
+        }
+
+        function applyInitialTheme() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                    console.log(`Applying dark theme (Saved: ${savedTheme}, Prefers: ${prefersDark}).`);
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    console.log(`Applying light theme (Saved: ${savedTheme}, Prefers: ${prefersDark}).`);
+                }
+            } catch (e) {
+                console.warn("Could not read theme state from localStorage:", e);
+            }
+        }
+
+        function setupCollapsibleSections() {
+            document.body.addEventListener('click', (event) => {
+                const toggleBtn = event.target.closest('.toggle-section-btn');
+                if (toggleBtn) {
+                    const targetId = toggleBtn.getAttribute('data-target');
+                    if (!targetId) {
+                        console.warn("Collapsible toggle button missing data-target attribute:", toggleBtn);
+                        return;
+                    }
+                    const targetContent = getElement(targetId);
+                    const parentSection = toggleBtn.closest('.collapsible');
+                    if (targetContent && parentSection) {
+                        const isCurrentlyCollapsed = parentSection.classList.contains('collapsed');
+                        targetContent.classList.toggle('hidden', isCurrentlyCollapsed);
+                        parentSection.classList.toggle('collapsed', !isCurrentlyCollapsed);
+                        toggleBtn.setAttribute('aria-expanded', !isCurrentlyCollapsed ? 'true' : 'false');
+                        const iconContainer = toggleBtn.querySelector('.toggle-icon');
+                        if (iconContainer) {
+                            iconContainer.style.transform = !isCurrentlyCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
+                        }
+                    } else {
+                        if (!targetContent) console.warn(`Collapsible content with ID '${targetId}' not found.`);
+                        if (!parentSection) console.warn("Could not find parent '.collapsible' element for toggle button:", toggleBtn);
+                    }
+                }
+            });
+        }
+
+        function initializeEventListeners() {
+            navToggleBtn?.addEventListener('click', toggleNavigation);
+            themeToggleBtn?.addEventListener('click', toggleTheme);
+            modalsContainer?.addEventListener('click', (event) => {
+                const target = event.target;
+                const modal = target.closest('.modal');
+                if (!modal) return;
+                const isCloseButton = target.closest('.close-modal-btn');
+                const isBackdropClick = target === modal && !modal.querySelector('.modal-content')?.contains(target);
+                if (isCloseButton || isBackdropClick) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            });
+        }
+
+        function toggleNavigation() {
+            const sideNav = getElement('side-nav');
+            sideNav?.classList.toggle('nav-collapsed');
+            try {
+                const isCollapsed = sideNav?.classList.contains('nav-collapsed');
+                localStorage.setItem('navCollapsed', isCollapsed ? 'true' : 'false');
+                console.log(`Nav state toggled. Collapsed: ${isCollapsed}. Saved to localStorage.`);
+            } catch (e) {
+                console.warn("Could not save nav state to localStorage:", e);
+            }
+        }
+
+        function toggleSettingsSubmenu() {
+            const settingsSubMenu = getElement('settings-submenu');
+            settingsSubMenu?.classList.toggle('hidden');
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            try {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                console.log(`Theme toggled. Is Dark: ${isDark}. Saved to localStorage.`);
+            } catch (e) {
+                console.warn("Could not save theme state to localStorage:", e);
+            }
+        }
+
+        applyInitialNavState(sideNav);
+        applyInitialTheme();
+        initializeEventListeners();
+        setupCollapsibleSections();
+        fetchBacklogsData();
+    });
+    </script>
+</body>
+</html>

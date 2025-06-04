@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Project Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apply dark mode based on system preference or saved setting
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Ensure modal container is above backdrop */
+        .modal {
+            z-index: 50; /* Keep modal container itself high */
+        }
+        /* Basic Button Styles (Tailwind classes preferred, but added here for clarity) */
+        .button {
+            display: inline-block;
+            padding: 0.5rem 1rem; /* Adjust as needed */
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500; /* font-medium */
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .button-secondary {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            border-color: #d1d5db; /* border-gray-300 */
+            color: #374151; /* text-gray-700 */
+        }
+
+            .button-secondary:hover {
+                background-color: #d1d5db; /* hover:bg-gray-300 */
+            }
+
+        .dark .button-secondary {
+            background-color: #4b5563; /* dark:bg-gray-600 */
+            border-color: #6b7280; /* dark:border-gray-500 */
+            color: #d1d5db; /* dark:text-gray-300 */
+        }
+
+            .dark .button-secondary:hover {
+                background-color: #6b7280; /* dark:hover:bg-gray-500 */
+            }
+
+        .button-primary {
+            background-color: #4f46e5; /* bg-indigo-600 */
+            color: white;
+        }
+
+            .button-primary:hover {
+                background-color: #4338ca; /* hover:bg-indigo-700 */
+            }
+
+        .dark .button-primary {
+            background-color: #0ea5e9; /* dark:bg-sky-600 */
+        }
+
+            .dark .button-primary:hover {
+                background-color: #0284c7; /* dark:hover:bg-sky-700 */
+            }
+        /* Style for invalid input fields */
+        .is-invalid {
+            border-color: #ef4444; /* border-red-500 */
+            box-shadow: 0 0 0 1px #ef4444; /* Optional: Add ring effect */
+        }
+
+        .dark .is-invalid {
+            border-color: #f87171; /* dark:border-red-400 */
+            box-shadow: 0 0 0 1px #f87171;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200 dark:border-slate-700 relative z-10">
+        <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-slate-200 mb-6">Login</h2>
+
+        <form id="login-form">
+            <div class="mb-4">
+                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Username:</label>
+                <input type="text" id="username" name="username" required
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm"
+                       placeholder="Enter your username">
+            </div>
+
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Password:</label>
+                <input type="password" id="password" name="password" required
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm"
+                       placeholder="Enter your password">
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-sky-600 dark:hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-800 dark:focus:ring-sky-500 transition duration-150 ease-in-out">
+                Login
+            </button>
+        </form>
+
+        <div id="login-message" class="mt-4 p-3 rounded-md text-center text-sm font-medium hidden">
+        </div>
+
+        <p class="text-center text-sm text-gray-500 dark:text-slate-400 mt-6">
+            Don't have an account?
+            <button type="button" id="open-create-account-modal-btn" class="text-indigo-600 hover:text-indigo-500 dark:text-sky-400 dark:hover:text-sky-300 font-medium underline">
+                Create one
+            </button>
+        </p>
+
+    </div>
+
+    <div id="create-account-modal" class="modal hidden fixed inset-0 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50">
+        <div class="modal-content relative z-50 mx-auto p-6 border border-gray-300 dark:border-slate-600 w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-slate-800">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-slate-200">Create New Account</h3>
+                <button type="button" id="close-create-account-modal-btn" class="close-modal-btn text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-slate-600 dark:hover:text-white" aria-label="Close modal">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+            <form id="create-account-form" class="mt-4 space-y-4">
+                <div>
+                    <label for="create-username" class="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-300">Username <span class="text-red-500">*</span></label>
+                    <input type="text" id="create-username" name="username" required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm"
+                           placeholder="Choose a username">
+                </div>
+                <div>
+                    <label for="create-password" class="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-300">Password <span class="text-red-500">*</span></label>
+                    <input type="password" id="create-password" name="password" required minlength="8"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm"
+                           placeholder="Enter password (min 8 chars)">
+                </div>
+                <div>
+                    <label for="confirm-password" class="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-300">Confirm Password <span class="text-red-500">*</span></label>
+                    <input type="password" id="confirm-password" name="confirm_password" required
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm"
+                           placeholder="Re-enter password">
+                </div>
+                <div>
+                    <label for="create-role" class="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-300">Role <span class="text-red-500">*</span></label>
+                    <select id="create-role" name="role" required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-sky-500 dark:focus:border-sky-500 sm:text-sm">
+                        <option value="Guest">Guest</option>
+                        <option value="DS Engineer">DS Engineer</option>
+                        <option value="Procurement">Procurement</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Administrator">Administrator</option>
+                    </select>
+                </div>
+                <div id="create-account-message" class="mt-2 p-3 rounded-md text-center text-sm font-medium hidden">
+                </div>
+                <div class="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-slate-700 space-x-2">
+                    <button type="button" id="cancel-create-account-btn" class="close-modal-btn button button-secondary text-sm">Cancel</button>
+                    <button type="submit" class="button button-primary text-sm">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="login.js" defer></script>
+
+</body>
+</html>

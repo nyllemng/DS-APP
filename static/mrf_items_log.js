@@ -77,6 +77,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 openMrfDetailsModal(item.form_no, item.item_no); // Pass both form_no and item_no
             };
             actionsCell.appendChild(viewButton);
+
+            // Add Edit button
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.className = 'button button-small button-secondary py-0.5 px-1 text-xs ml-1'; // Adjusted styling
+            editButton.title = `Edit MRF ${item.form_no}`;
+            editButton.onclick = () => {
+                // Redirect to the MRF form page for editing
+                window.location.href = `/mrf_form?form_no=${encodeURIComponent(item.form_no)}`;
+            };
+            actionsCell.appendChild(editButton);
+
+            // Add Delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.className = 'button button-small button-danger py-0.5 px-1 text-xs ml-1'; // Adjusted styling
+            deleteButton.title = `Delete MRF ${item.form_no}`;
+            deleteButton.onclick = () => {
+                if (confirm(`Are you sure you want to delete MRF ${item.form_no}? This action cannot be undone.`)) {
+                    // TODO: Implement actual delete logic (call backend API)
+                    console.log(`Delete confirmed for MRF: ${item.form_no}`);
+                    // Example: call a function like deleteMrf(item.form_no);
+                }
+            };
+            actionsCell.appendChild(deleteButton);
         });
     }
 

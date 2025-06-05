@@ -84,8 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
             editButton.className = 'button button-small button-secondary py-0.5 px-1 text-xs ml-1'; // Adjusted styling
             editButton.title = `Edit MRF ${item.form_no}`;
             editButton.onclick = () => {
-                // Redirect to the MRF form page for editing
-                window.location.href = `/mrf_form?form_no=${encodeURIComponent(item.form_no)}`;
+                // Open an edit modal instead of redirecting
+                openMrfEditModal(item); // Pass the item data to the modal function
             };
             actionsCell.appendChild(editButton);
 
@@ -186,6 +186,141 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalButton = document.getElementById('closeModalBtn');
     if (closeModalButton) {
         closeModalButton.addEventListener('click', closeModal);
+    }
+
+    // Placeholder for the MRF Edit Modal functionality
+    function openMrfEditModal(itemData) {
+        console.log('Attempting to open edit modal for item:', itemData);
+
+        const modal = document.getElementById('mrfEditModal');
+        if (!modal) {
+            console.error('MRF Edit Modal element not found!');
+            return;
+        }
+
+        // Get references to the form fields
+        const itemIdInput = document.getElementById('edit-item-id');
+        const formNoInput = document.getElementById('edit-form-no');
+        const itemNoInput = document.getElementById('edit-item-no-identifier');
+        const partNoInput = document.getElementById('edit-part-no');
+        const brandNameInput = document.getElementById('edit-brand-name');
+        const descriptionInput = document.getElementById('edit-description');
+        const qtyInput = document.getElementById('edit-qty');
+        const uomInput = document.getElementById('edit-uom');
+        const installDateInput = document.getElementById('edit-install-date');
+        const itemStatusSelect = document.getElementById('edit-item-status');
+        const actualDeliveryInput = document.getElementById('edit-actual-delivery');
+        const itemRemarksInput = document.getElementById('edit-item-remarks');
+
+        // Populate the form fields with item data
+        if (itemIdInput) itemIdInput.value = itemData.id || ''; // Assuming 'id' is the primary key
+        if (formNoInput) formNoInput.value = itemData.form_no || '';
+        if (itemNoInput) itemNoInput.value = itemData.item_no || ''; // Use a different ID to avoid conflict with details modal
+        if (partNoInput) partNoInput.value = itemData.part_no || '';
+        if (brandNameInput) brandNameInput.value = itemData.brand_name || '';
+        if (descriptionInput) descriptionInput.value = itemData.description || '';
+        if (qtyInput) qtyInput.value = itemData.qty !== null && itemData.qty !== undefined ? itemData.qty : '';
+        if (uomInput) uomInput.value = itemData.uom || '';
+
+        // Format date strings for input fields
+        if (installDateInput) {
+            installDateInput.value = itemData.install_date ? new Date(itemData.install_date).toISOString().split('T')[0] : '';
+        }
+         if (actualDeliveryInput) {
+            actualDeliveryInput.value = itemData.actual_delivery ? new Date(itemData.actual_delivery).toISOString().split('T')[0] : '';
+        }
+
+        if (itemStatusSelect) itemStatusSelect.value = itemData.item_status || '';
+        if (itemRemarksInput) itemRemarksInput.value = itemData.item_remarks || '';
+
+        // Show the modal
+        modal.classList.remove('hidden');
+
+        // Handle form submission for saving edits
+        const mrfEditForm = document.getElementById('mrfEditForm');
+        if (mrfEditForm) {
+            mrfEditForm.addEventListener('submit', async function(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                console.log('Attempting to save MRF item edits...');
+
+                // Collect data from the form fields
+                const itemId = document.getElementById('edit-item-id').value; // Database ID
+                const formNo = document.getElementById('edit-form-no').value;
+                const itemNo = document.getElementById('edit-item-no-identifier').value; // Item number within the form
+
+                const updatedData = {
+                    // Include identifiers
+                    id: itemId, // Send the database ID for the update query
+                    form_no: formNo,
+                    item_no: itemNo,
+
+                    // Include editable fields
+                    part_no: document.getElementById('edit-part-no').value,
+                    brand_name: document.getElementById('edit-brand-name').value,
+                    description: document.getElementById('edit-description').value,
+                    qty: parseFloat(document.getElementById('edit-qty').value), // Convert to number
+                    uom: document.getElementById('edit-uom').value,
+                    install_date: document.getElementById('edit-install-date').value,
+                    item_status: document.getElementById('edit-item-status').value,
+                    actual_delivery: document.getElementById('edit-actual-delivery').value,
+                    item_remarks: document.getElementById('edit-item-remarks').value,
+                };
+
+                console.log('Collected data for update:', updatedData);
+
+                // TODO: Implement sending this data to a backend API endpoint
+                // TODO: Handle the backend response (success/error)
+                // TODO: Close the modal on success and refresh the table
+                // Example fetch call (assuming a PUT or POST endpoint like /api/mrf_items/<item_id>):
+                // try {
+                //     const response = await fetch(`/api/mrf_items/${itemId}`, { // Use item ID in URL? Or pass in body? Consistent with backend design.
+                //         method: 'PUT', // Or POST
+                //         headers: {
+                //             'Content-Type': 'application/json',
+                //         },
+                //         body: JSON.stringify(updatedData),
+                //     });
+                //
+                //     if (!response.ok) {
+                //         const errorData = await response.json().catch(() => ({ error: 'Failed to save MRF item. Server returned ' + response.status }));
+                //         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                //     }
+                //
+                //     console.log('MRF item updated successfully');
+                //     closeEditModal(); // Close the modal
+                //     fetchMrfLog(); // Refresh the table data
+                //
+                // } catch (error) {
+                //     console.error('Error saving MRF item:', error);
+                //     // TODO: Display error message to the user in the modal or elsewhere
+                //     alert('Failed to save changes: ' + error.message);
+                // }
+            });
+        }
+    }
+
+    // Function to close the edit modal.
+    function closeEditModal() {
+        const modal = document.getElementById('mrfEditModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // Add event listener for closing the edit modal.
+    const closeEditModalButton = document.getElementById('closeEditModalBtn');
+    if (closeEditModalButton) {
+        closeEditModalButton.addEventListener('click', closeEditModal);
+    }
+
+    // Optional: Close modal when clicking outside (basic implementation)
+    const editModal = document.getElementById('mrfEditModal');
+    if (editModal) {
+        editModal.addEventListener('click', function(event) {
+            // Check if the click is directly on the modal background, not the modal content
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+        });
     }
 
     // Initial fetch

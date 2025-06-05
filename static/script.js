@@ -2328,9 +2328,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Global UI Toggles ---
         themeToggleBtn?.addEventListener('click', toggleTheme);
-        navToggleBtn?.addEventListener('click', toggleNavigation);
+        // navToggleBtn?.addEventListener('click', toggleNavigation); // Remove click listener for hover
         settingsToggleBtn?.addEventListener('click', toggleSettingsSubmenu);
         console.log("    - Global UI toggle listeners added.");
+
+        // Add mouseover and mouseout listeners for hover functionality on nav toggle button
+        const navToggleBtn = getElement('nav-main-toggle-btn');
+        const sideNav = getElement('side-nav');
+
+        if (navToggleBtn && sideNav) {
+            navToggleBtn.addEventListener('mouseover', () => {
+                console.groupCollapsed("UI: Nav Toggle Mouseover");
+                console.log("    - Removing nav-collapsed class on mouseover.");
+                sideNav.classList.remove('nav-collapsed');
+                // Optionally, you might want to set a flag here to prevent mouseout closing immediately
+                console.groupEnd();
+            });
+
+            navToggleBtn.addEventListener('mouseout', () => {
+                 console.groupCollapsed("UI: Nav Toggle Mouseout");
+                 console.log("    - Adding nav-collapsed class on mouseout.");
+                 // Add a small delay before collapsing, allowing mouse to enter the nav area
+                 // This is a common pattern for hover menus.
+                 // Clear any pending collapse if mouseovers happen rapidly
+                 if (sideNav._collapseTimeout) clearTimeout(sideNav._collapseTimeout);
+
+                 sideNav._collapseTimeout = setTimeout(() => {
+                    // Check if the mouse is now over the side nav itself before collapsing
+                    // This requires checking relatedTarget or adding mouseover/mouseout to sideNav
+                    // For simplicity now, we'll just collapse after a short delay unless another mouseover on the button happens.
+                     sideNav.classList.add('nav-collapsed');
+                     console.log("    - Collapsed nav after timeout.");
+                 }, 300); // 300ms delay
+
+                 console.groupEnd();
+            });
+             // Add mouseover/mouseout to sideNav itself to keep it open when hovered
+             sideNav.addEventListener('mouseover', () => {
+                 console.log("UI: Side Nav Mouseover - Clearing collapse timeout.");
+                 if (sideNav._collapseTimeout) {
+                     clearTimeout(sideNav._collapseTimeout);
+                     sideNav._collapseTimeout = null; // Clear the reference
+                 }
+             });
+             sideNav.addEventListener('mouseout', () => {
+                  console.groupCollapsed("UI: Side Nav Mouseout - Starting collapse timeout.");
+                  // Start collapse timeout only if not already pending from button mouseout
+                  if (!sideNav._collapseTimeout) {
+                     sideNav._collapseTimeout = setTimeout(() => {
+                         sideNav.classList.add('nav-collapsed');
+                         console.log("    - Collapsed nav after side nav mouseout timeout.");
+                     }, 300); // Same delay
+                  }
+                  console.groupEnd();
+             });
+
+            console.log("    - Nav toggle hover listeners added.");
+        }
 
         // --- Modal Closing Logic (Delegated Listener) ---
         modalsContainer?.addEventListener('click', (event) => {

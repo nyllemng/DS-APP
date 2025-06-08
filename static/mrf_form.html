@@ -686,6 +686,7 @@
                                     <th style="width: 7%;" class="text-right">Qty</th>
                                     <th style="width: 7%;">UOM</th>
                                     <th style="width: 10%;">Install. Date</th>
+                                    <th style="width: 10%; display: none;">Status</th>
                                     <th style="width: 20%;">Remarks</th>
                                     <th class="no-print" style="width: 3%;">Act</th>
                                 </tr>
@@ -919,6 +920,18 @@
                     <td><input type="number" class="table-input number-input" value="${rowData.qty || '1'}" step="1" min="0" title="Quantity"></td>
                     <td><input type="text" class="table-input" value="${rowData.uom || ''}" placeholder="e.g., pc, m, lot" title="Unit of Measure"></td>
                     <td><input type="date" class="table-input" value="${rowData.installDate || new Date().toISOString().split('T')[0]}" title="Target Installation Date"></td>
+                    <td style="display: none;">
+                        <select class="table-input" title="Item Status">
+                            <option value="Pending" ${rowData.itemStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Processing" ${rowData.itemStatus === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option value="For Purchase Order" ${rowData.itemStatus === 'For Purchase Order' ? 'selected' : ''}>For Purchase Order</option>
+                            <option value="Awaiting Delivery" ${rowData.itemStatus === 'Awaiting Delivery' ? 'selected' : ''}>Awaiting Delivery</option>
+                            <option value="Delivered to CMR" ${rowData.itemStatus === 'Delivered to CMR' ? 'selected' : ''}>Delivered to CMR</option>
+                            <option value="Delivered to Site" ${rowData.itemStatus === 'Delivered to Site' ? 'selected' : ''}>Delivered to Site</option>
+                            <option value="Cancelled" ${rowData.itemStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            <option value="On Hold" ${rowData.itemStatus === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                        </select>
+                    </td>
                     <td><input type="text" class="table-input" value="${rowData.remarks || ''}" placeholder="Remarks" title="Remarks"></td>
                     <td class="no-print"><button class="action-button" onclick="deleteMrfRow(this)" title="Delete Row">Del</button></td>
                 `;
@@ -955,7 +968,18 @@
 
             inputsToToggle.forEach(input => {
                 let staticElement = input.nextElementSibling;
-                if (staticElement && (staticElement.tagName === 'INPUT' || staticElement.tagName === 'SELECT' || staticElement.tagName === 'TEXTAREA' || staticElement.id === 'formNoSuffix')) {
+                // Special handling for select elements within table rows
+                if (input.tagName === 'SELECT' && input.closest('#mrfTableBody')) {
+                    staticElement = input.nextElementSibling;
+                    if (staticElement && staticElement.classList.contains('table-input-static')) {
+                        // This is the static span we created previously for this select
+                    } else {
+                        // If no static element exists, create one
+                        staticElement = document.createElement('span');
+                        staticElement.className = 'table-input-static';
+                        input.parentNode.insertBefore(staticElement, input.nextSibling);
+                    }
+                } else if (staticElement && (staticElement.tagName === 'INPUT' || staticElement.tagName === 'SELECT' || staticElement.tagName === 'TEXTAREA' || staticElement.id === 'formNoSuffix')) {
                     staticElement = null;
                 }
                 const isStaticValue = staticElement && staticElement.classList.contains('static-text-value');
@@ -967,6 +991,14 @@
 
 
                 if (makeStatic) {
+                    // For select elements, handle the static element creation specifically
+                    if (input.tagName === 'SELECT' && input.closest('#mrfTableBody')) {
+                        staticElement.textContent = input.selectedOptions.length > 0 ? input.selectedOptions[0].text : '';
+                        input.style.display = 'none';
+                        staticElement.style.display = 'inline-block';
+                        return; // Skip general handling for this input
+                    }
+
                     if (!staticElement || !(isStaticValue || isTableStaticValue)) {
                         staticElement = document.createElement(input.tagName === 'TEXTAREA' ? 'pre' : 'span');
                         if (input.classList.contains('table-input')) {
@@ -998,6 +1030,16 @@
                         if (input.classList.contains('table-input')) staticElement.style.display = 'inline-block';
                     }
                 } else {
+                    // If it's a select element in a table row, show it
+                    if (input.tagName === 'SELECT' && input.closest('#mrfTableBody')) {
+                        input.style.display = '';
+                        const staticElement = input.nextElementSibling;
+                        if (staticElement && staticElement.classList.contains('table-input-static')) {
+                            staticElement.style.display = 'none';
+                        }
+                        return; // Skip general handling for this input
+                    }
+
                     if (staticElement && (isStaticValue || isTableStaticValue)) {
                         staticElement.style.display = 'none';
                     }
@@ -1079,17 +1121,25 @@
             }
             sheetData.push([]);
             sheetData.push([{ v: "I. Materials Requested", s: { ...boldStyle, font: { ...boldStyle.font, sz: 10 } } }]);
-            const excelHeaders = ["No.", "Part Number", "Brand Name", "Description", "Qty", "UOM", "Install. Date", "Remarks"];
+            const excelHeaders = ["No.", "Part Number", "Brand Name", "Description", "Qty", "UOM", "Install. Date", "Status", "Remarks"];
             sheetData.push(excelHeaders.map(h => ({ v: h, s: tableHeaderStyle })));
             const tableBody = document.getElementById('mrfTableBody');
             if (tableBody) {
                 Array.from(tableBody.rows).forEach(tr => {
-                    const rowData = []; const inputs = tr.querySelectorAll('input');
-                    rowData.push({ v: inputs[0]?.value, s: centerCellStyle }); rowData.push({ v: inputs[1]?.value, s: cellStyle });
-                    rowData.push({ v: inputs[2]?.value, s: cellStyle }); rowData.push({ v: inputs[3]?.value, s: cellStyle });
+                    const rowData = []; 
+                    const inputs = tr.querySelectorAll('input');
+                    const select = tr.querySelector('select'); // Get the select element for status
+
+                    rowData.push({ v: inputs[0]?.value, s: centerCellStyle });
+                    rowData.push({ v: inputs[1]?.value, s: cellStyle });
+                    rowData.push({ v: inputs[2]?.value, s: cellStyle });
+                    rowData.push({ v: inputs[3]?.value, s: cellStyle });
                     rowData.push({ v: parseFloat(inputs[4]?.value) || 0, t: 'n', s: rightCellStyle });
-                    rowData.push({ v: inputs[5]?.value, s: centerCellStyle }); rowData.push({ v: inputs[6]?.value, s: centerCellStyle });
-                    rowData.push({ v: inputs[7]?.value, s: cellStyle }); sheetData.push(rowData);
+                    rowData.push({ v: inputs[5]?.value, s: centerCellStyle });
+                    rowData.push({ v: inputs[6]?.value, s: centerCellStyle });
+                    rowData.push({ v: select ? select.value : '', s: centerCellStyle }); // Add status value
+                    rowData.push({ v: inputs[7]?.value, s: cellStyle }); 
+                    sheetData.push(rowData);
                 });
             }
             sheetData.push([]);
@@ -1105,7 +1155,7 @@
                 sheetData.push([]);
             });
             const ws = XLSX.utils.aoa_to_sheet(sheetData);
-            ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 30 }];
+            ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 30 }];
             const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: excelHeaders.length - 1 } }]; ws['!merges'] = merges;
             XLSX.utils.book_append_sheet(wb, ws, "Material Request Form");
             XLSX.writeFile(wb, `${formNo.replace(/[^a-z0-9_.-]/gi, '_')}.xlsx`);
@@ -1157,7 +1207,8 @@
             if (tableBody) {
                 Array.from(tableBody.rows).forEach(tr => {
                     const inputs = tr.querySelectorAll('input');
-                    dataToSave.tableRows.push({ values: { itemNo: inputs[0].value, partNo: inputs[1].value, brandName: inputs[2].value, description: inputs[3].value, qty: inputs[4].value, uom: inputs[5].value, installDate: inputs[6].value, remarks: inputs[7].value } });
+                    const select = tr.querySelector('select'); // Get the select element for status
+                    dataToSave.tableRows.push({ values: { itemNo: inputs[0].value, partNo: inputs[1].value, brandName: inputs[2].value, description: inputs[3].value, qty: inputs[4].value, uom: inputs[5].value, installDate: inputs[6].value, itemStatus: select ? select.value : 'Pending', remarks: inputs[7].value } });
                 });
             }
             ['footerPreparedByName', 'footerPreparedByDesignation', 'footerApprovedByName', 'footerApprovedByDesignation', 'footerNotedByName', 'footerNotedByDesignation']
@@ -1222,7 +1273,25 @@
             if (!tableBody) return;
             tableBody.innerHTML = '';
             if (data.tableRows && Array.isArray(data.tableRows)) {
-                if (data.tableRows.length > 0) { data.tableRows.forEach(rowData => { if (rowData && rowData.values) { addMrfRow(rowData); } else { console.warn("Skipping row in tableRows:", rowData); } }); }
+                if (data.tableRows.length > 0) {
+                    data.tableRows.forEach(rowData => {
+                        if (rowData && rowData.values) {
+                            addMrfRow({
+                                values: {
+                                    itemNo: rowData.values.itemNo,
+                                    partNo: rowData.values.partNo,
+                                    brandName: rowData.values.brandName,
+                                    description: rowData.values.description,
+                                    qty: rowData.values.qty,
+                                    uom: rowData.values.uom,
+                                    installDate: rowData.values.installDate,
+                                    remarks: rowData.values.remarks,
+                                    itemStatus: rowData.values.item_status || 'Pending' // Use item_status from backend, default to 'Pending'
+                                }
+                            });
+                        } else { console.warn("Skipping row in tableRows:", rowData); }
+                    });
+                }
                 else { addMrfRow(); }
             } else { console.warn("data.tableRows missing or not array. Adding default row."); addMrfRow(); }
 

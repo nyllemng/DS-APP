@@ -291,29 +291,37 @@ def init_db():
 
         print(" -> Checking 'mrf_items' table...")
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='mrf_items';")
-        if not cursor.fetchone():
+        table_exists = cursor.fetchone()
+        if not table_exists:
             print(" -> Creating 'mrf_items' table...")
-            cursor.execute('''
+            cursor.execute(''''
                 CREATE TABLE mrf_items (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     mrf_request_id INTEGER NOT NULL,
                     item_no INTEGER,
                     part_no TEXT,
                     brand_name TEXT,
-                    description TEXT,
+                    description TEXT NOT NULL,
                     qty REAL,
                     uom TEXT,
                     install_date TEXT,
                     remarks TEXT,
-                    status TEXT DEFAULT 'Pending', 
+                    item_status TEXT DEFAULT 'Pending' NOT NULL,
                     FOREIGN KEY(mrf_request_id) REFERENCES mrf_requests(id) ON DELETE CASCADE
                 )
             ''')
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_mrf_item_mrf_request_id ON mrf_items (mrf_request_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_mrf_request_id ON mrf_items (mrf_request_id)")
             print(" -> 'mrf_items' table created.")
         else:
-            print(" -> 'mrf_items' table already exists.")
-        # --- End MRF Placeholder ---
+            print(" -> 'mrf_items' table exists. Checking columns...")
+            cursor.execute("PRAGMA table_info(mrf_items)")
+            mrf_items_columns = {column['name'] for column in cursor.fetchall()}
+            if 'item_status' not in mrf_items_columns:
+                try:
+                    cursor.execute("ALTER TABLE mrf_items ADD COLUMN item_status TEXT DEFAULT 'Pending' NOT NULL")
+                    print(" -> Added 'item_status' column to 'mrf_items' with default 'Pending'.")
+                except sqlite3.OperationalError as e:
+                    print(f" -> Could not add 'item_status' to 'mrf_items': {e}")
 
         conn.commit()
         print("Database schema initialization/verification complete.")
@@ -2432,54 +2440,141 @@ def get_mrf_by_form_no(form_no):
 @app.route('/api/mrf_details', methods=['GET'])
 @role_required(VALID_ROLES) # Adjust roles as needed
 def get_mrf_item_details():
+    """Fetches details for a specific MRF item (based on form_no and item_no)."""
+    form_no = request.args.get('form_no')
+    item_no = request.args.get('item_no')
+
+    if not form_no or not item_no:
+        return jsonify({"error": "Missing form_no or item_no parameter."}), 400
+
     conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
-        
-        form_no = request.args.get('form_no')
-        item_no = request.args.get('item_no')
+        cursor.execute("SELECT * FROM mrf_items WHERE form_no = ? AND item_no = ?", (form_no, item_no))
+        mrf_item = cursor.fetchone()
 
-        if not form_no or item_no is None:
-            return jsonify({"error": "Missing form_no or item_no parameter"}), 400
+        if mrf_item:
+            return jsonify(dict(mrf_item)), 200
+        else:
+            return jsonify({"error": "MRF item not found."}), 404
+    except Exception as e:
+        print(f"Error fetching MRF item details for form_no={form_no}, item_no={item_no}: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Error fetching MRF item details."}), 500
+    finally:
+        if conn: conn.close()
 
-        # Ensure item_no is an integer if expected as such in DB
-        try:
-            item_no = int(item_no)
-        except ValueError:
-            return jsonify({"error": "Invalid item_no format"}), 400
 
-        # Query to get specific item details by joining mrf_requests and mrf_items
-        cursor.execute("""
-            SELECT 
-                r.form_no, r.project_name, r.mrf_date, 
-                i.item_no, i.part_no, i.brand_name, i.description,
-                i.qty, i.uom, i.install_date, i.remarks as item_remarks, i.status as item_status,
-                -- Include actual_delivery if it exists in the schema, otherwise use NULL or placeholder
-                NULL as actual_delivery -- Placeholder, replace if you add this column
-            FROM mrf_items i
-            JOIN mrf_requests r ON i.mrf_request_id = r.id
-            WHERE r.form_no = ? AND i.item_no = ?
-        """, (form_no, item_no))
-        
-        item_details = cursor.fetchone()
-        
-        if not item_details:
-            return jsonify({"error": f"MRF Item not found for Form No: {form_no}, Item No: {item_no}"}), 404
-            
-        return jsonify(dict(item_details)), 200
+@app.route('/api/mrf_items', methods=['PUT'])
+@role_required([ADMIN, PROCUREMENT, DS_ENGINEER]) # Only these roles can update MRF items
+def update_mrf_item():
+    print("\n[DEBUG] update_mrf_item: Received PUT request for MRF item update.")
+    data = request.get_json()
+    print(f"[DEBUG] Request JSON data: {data}")
+    if not data:
+        print("[DEBUG] No JSON data received.")
+        return jsonify({"error": "Request body must contain JSON data."}), 400
+
+    item_id = data.get('id')
+    print(f"[DEBUG] Attempting to update item_id: {item_id}")
+    if not item_id:
+        print("[DEBUG] Missing item_id in request.")
+        return jsonify({"error": "Missing 'id' for MRF item update."}), 400
+
+    allowed_fields = {
+        'part_no': str,
+        'brand_name': str,
+        'description': str,
+        'qty': float,
+        'uom': str,
+        'install_date': 'date_str_optional', # Use the custom date parser
+        'item_status': str,
+        'actual_delivery': 'date_str_optional', # Use the custom date parser
+        'item_remarks': str,
+    }
+
+    fields_to_update = {}
+    validation_errors = []
+
+    for field, field_type in allowed_fields.items():
+        if field in data:
+            value = data[field]
+            sanitized_value = None
+            error_msg = None
+
+            try:
+                if field_type == 'date_str_optional':
+                    str_val = str(value).strip() if value is not None else None
+                    if str_val == '':
+                        sanitized_value = None
+                    elif str_val:
+                        parsed_dt = parse_flexible_date(str_val)
+                        if not parsed_dt:
+                            error_msg = f"Invalid date format for '{field}': '{value}'. Use YYYY-MM-DD or MM/DD/YYYY or empty."
+                        else:
+                            sanitized_value = parsed_dt.isoformat()
+                elif field_type == float:
+                    float_val = safe_float(value, default=None) if value is not None and str(value).strip() != '' else None
+                    if float_val is None and value is not None and str(value).strip() != '':
+                        error_msg = f"Invalid value for '{field}': '{value}'. Expected number or empty."
+                    else:
+                        sanitized_value = float_val
+                elif field_type == str:
+                    sanitized_value = str(value).strip() if value is not None else None
+                    # Allow empty strings for most fields, except critical identifiers if any
+                else:
+                    error_msg = f"Internal error: Unknown validation type for field '{field}'."
+            except Exception as val_err:
+                error_msg = f"Error processing field '{field}': {val_err}"
+
+            if error_msg:
+                validation_errors.append(error_msg)
+            else:
+                fields_to_update[field] = sanitized_value
+
+    if validation_errors:
+        print(f"[DEBUG] Validation errors: {validation_errors}")
+        return jsonify({"error": "Validation failed", "details": validation_errors}), 400
+
+    if not fields_to_update:
+        print("[DEBUG] No valid fields to update.")
+        return jsonify({"message": "No valid fields provided for update."}), 200
+
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Check if the MRF item exists
+        cursor.execute("SELECT id FROM mrf_items WHERE id = ?", (item_id,))
+        if not cursor.fetchone():
+            print(f"[DEBUG] MRF item {item_id} not found.")
+            return jsonify({"error": "MRF item not found."}), 404
+
+        set_clause = ", ".join([f"{field} = ?" for field in fields_to_update])
+        update_values = list(fields_to_update.values()) + [item_id]
+
+        sql = f"UPDATE mrf_items SET {set_clause} WHERE id = ?"
+        print(f"[DEBUG] SQL query: {sql}, Values: {update_values}")
+        cursor.execute(sql, tuple(update_values))
+        conn.commit()
+
+        print(f"[DEBUG] MRF item {item_id} updated successfully.")
+        return jsonify({"message": "MRF item updated successfully."}), 200
 
     except sqlite3.Error as db_err:
-        print(f"Error fetching MRF item details for Form No {form_no}, Item No {item_no}: {db_err}")
+        if conn: conn.rollback()
+        print(f"[ERROR] DB error during MRF item update: {db_err}")
         traceback.print_exc()
-        return jsonify({"error": f"Database error fetching MRF item details: {db_err}"}), 500
+        return jsonify({"error": f"Database error: {db_err}"}), 500
     except Exception as e:
-        print(f"Unexpected error fetching MRF item details for Form No {form_no}, Item No {item_no}: {e}")
+        if conn: conn.rollback()
+        print(f"[ERROR] Unexpected error during MRF item update: {e}")
         traceback.print_exc()
-        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
+        return jsonify({"error": "Unexpected server error during MRF item update."}), 500
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 
 # --- Main Execution Block ---
